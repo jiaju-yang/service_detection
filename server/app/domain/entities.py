@@ -91,5 +91,55 @@ class AnonymousUser(object):
 
 
 class Host(object):
-    def __init__(self, id, name, detail, address, services):
-        pass
+    def __init__(self, name, detail, address, services=None, id=None):
+        self._name = name
+        self._detail = detail
+        self._address = address
+        self._services = []
+        if services:
+            self._services.extend(services)
+        self._id = id
+
+    @property
+    def id(self):
+        return self._id
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def detail(self):
+        return self._detail
+
+    @property
+    def address(self):
+        return self._address
+
+    @property
+    def services(self):
+        return self._services
+
+
+class Service(object):
+    def __init__(self, id, name, detail, port):
+        self._id = id
+        self._name = name
+        self._detail = detail
+        self._port = port
+
+    @property
+    def id(self):
+        return self._id
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def detail(self):
+        return self._detail
+
+    @property
+    def port(self):
+        return self._port

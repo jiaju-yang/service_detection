@@ -1,9 +1,10 @@
 from jwt import DecodeError
 
-from .repos import AdminRepo
+from .repos import AdminRepo, HostRepo
 from .utils import decrypt_with_jwt, now
-from .entities import AnonymousUser, Admin
-from .errors import IncorrectSign, IncorrectUsername, IncorrectPassword
+from .entities import AnonymousUser, Admin, Host
+from .errors import IncorrectSign, IncorrectUsername, IncorrectPassword, \
+    EmptyField
 
 
 def auth_view_token(repo: AdminRepo, sign):
@@ -50,3 +51,12 @@ def set_admin(repo: AdminRepo, username, original_password, sign=None,
 
 def is_valid_admin(user):
     return user and user.role == Admin.role and user.is_auth_valid()
+
+
+def add_host(repo: HostRepo, name, detail, address):
+    if not name:
+        raise EmptyField('name')
+    if not address:
+        raise EmptyField('address')
+    host = Host(name, detail, address)
+    repo.add(host)

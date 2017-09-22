@@ -1,9 +1,11 @@
 from flask import Blueprint, request, jsonify
 
 from .permission import admin_required
-from .domain.errors import IncorrectSign, IncorrectUsername, IncorrectPassword
-from .domain.usecases import auth_view_token, auth_admin_token, get_user_by_token
-from .repos import AdminRepoImpl
+from .domain.errors import IncorrectSign, IncorrectUsername, IncorrectPassword, \
+    EmptyField
+from .domain.usecases import auth_view_token, auth_admin_token, \
+    get_user_by_token, add_host
+from .repos import AdminRepoImpl, HostRepoImpl
 from . import status
 
 main = Blueprint('main', __name__)
@@ -23,9 +25,11 @@ def admin_auth():
                                  request.json.get('username', None),
                                  request.json.get('password', None))
     except IncorrectUsername:
-        return status.respond({'msg': 'Incorrect username!'}, status.BAD_REQUEST)
+        return status.respond({'msg': 'Incorrect username!'},
+                              status.BAD_REQUEST)
     except IncorrectPassword:
-        return status.respond({'msg': 'Incorrect password!'}, status.BAD_REQUEST)
+        return status.respond({'msg': 'Incorrect password!'},
+                              status.BAD_REQUEST)
     else:
         return jsonify({'token': token})
 
@@ -42,5 +46,14 @@ def view_auth():
 
 @main.route('/host', methods=['POST'])
 @admin_required
-def add_host():
-    return status.respond({'msg': 'ok'})
+def host():
+    try:
+        add_host(HostRepoImpl(),
+                 request.json.get('name', None),
+                 request.json.get('detail', None),
+                 request.json.get('address', None))
+    except EmptyField as e:
+        return status.respond(
+            {'msg': 'Required field: {field}'.format(field=e.field)},
+            status.BAD_REQUEST)
+    return status.respond(status=status.CREATED)

@@ -20,6 +20,10 @@ class AdminRepo(metaclass=ABCMeta):
 
 class HostRepo(metaclass=ABCMeta):
     @abstractmethod
+    def add(self, host: Host):
+        pass
+
+    @abstractmethod
     def all(self):
         r"""
 

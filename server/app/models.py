@@ -31,10 +31,11 @@ class HostModel(db.Model):
     address = db.Column(db.Text, nullable=False)
     services = db.relationship('ServiceModel', backref='host')
 
-    def __init__(self, name, detail, address):
+    def __init__(self, name, detail, address, services=None):
         self.name = name
         self.detail = detail
         self.address = address
+        self.services = services
 
     def __repr__(self):
         return '<Host {name}, {address}>'.format(name=self.name,
@@ -49,3 +50,12 @@ class ServiceModel(db.Model):
     detail = db.Column(db.Text)
     port = db.Column(db.Integer, nullable=False)
     host_id = db.Column(db.Integer, db.ForeignKey('hosts.id'), nullable=False)
+
+    def __init__(self, name, detail, port, host_id):
+        self.name = name
+        self.detail = detail
+        self.port = port
+        self.host_id = host_id
+
+    def __repr__(self):
+        return '<Service {name}, {port}>'.format(name=self.name, port=self.port)
