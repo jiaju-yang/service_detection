@@ -125,16 +125,17 @@ class Host(object):
             'id': self.id,
             'name': self.name,
             'detail': self.detail,
-            'address': self.address
+            'address': self.address,
+            'services': [service.to_json() for service in self.services]
         }
 
 
 class Service(object):
-    def __init__(self, id, name, detail, port):
-        self._id = id
+    def __init__(self, name, detail, port, id=None):
         self._name = name
         self._detail = detail
         self._port = port
+        self._id = id
 
     @property
     def id(self):
@@ -151,3 +152,11 @@ class Service(object):
     @property
     def port(self):
         return self._port
+
+    def to_json(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'detail': self.detail,
+            'port': self.port
+        }

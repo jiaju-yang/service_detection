@@ -1,10 +1,10 @@
 import sys
 
-from .domain.repos import AdminRepo, HostRepo
+from .domain.repos import AdminRepo, HostRepo, ServiceRepo
 from .models import AdminModel, HostModel, ServiceModel
 from .mappers import admin_model_2_admin, admin_2_admin_model, \
-    host_model_2_host, host_2_host_model
-from .domain.entities import Admin, Host
+    host_model_2_host, host_2_host_model, service_2_service_model
+from .domain.entities import Admin, Host, Service
 from . import db
 
 
@@ -49,4 +49,21 @@ class HostRepoImpl(HostRepo):
         host_model = host_2_host_model(host)
         host_model.id = host.id
         db.session.merge(host_model)
+        db.session.commit()
+
+
+class ServiceRepoImpl(ServiceRepo):
+    def add(self, host_id, service: Service):
+        service_model = service_2_service_model(service, host_id)
+        db.session.add(service_model)
+        db.session.commit()
+
+    def delete(self, id):
+        ServiceModel.query.filter_by(id=id).delete()
+        db.session.commit()
+
+    def modify(self, host_id, service: Service):
+        service_model = service_2_service_model(service, host_id)
+        service_model.id = service.id
+        db.session.merge(service_model)
         db.session.commit()

@@ -1,8 +1,8 @@
 from jwt import DecodeError
 
-from .repos import AdminRepo, HostRepo
+from .repos import AdminRepo, HostRepo, ServiceRepo
 from .utils import decrypt_with_jwt, now
-from .entities import AnonymousUser, Admin, Host
+from .entities import AnonymousUser, Admin, Host, Service
 from .errors import IncorrectSign, IncorrectUsername, IncorrectPassword, \
     EmptyField
 
@@ -78,3 +78,20 @@ def modify_host(repo: HostRepo, id, name, detail, address):
     _fields_required(locals(), 'id', 'name', 'address')
     host = Host(name, detail, address, id=id)
     repo.modify(host)
+
+
+def add_service(repo: ServiceRepo, host_id, name, detail, port):
+    _fields_required(locals(), 'host_id', 'name', 'port')
+    service = Service(name, detail, port)
+    repo.add(host_id, service)
+
+
+def delete_service(repo: ServiceRepo, id):
+    _fields_required(locals(), 'id')
+    repo.delete(id)
+
+
+def modify_service(repo: ServiceRepo, id, name, detail, port, host_id):
+    _fields_required(locals(), 'id', 'name', 'port', 'host_id')
+    service = Service(name, detail, port, id=id)
+    repo.modify(host_id, service)
