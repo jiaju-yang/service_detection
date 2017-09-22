@@ -1,7 +1,7 @@
 import sys
 
 from .domain.repos import AdminRepo, HostRepo
-from .models import AdminModel, HostModel
+from .models import AdminModel, HostModel, ServiceModel
 from .mappers import admin_model_2_admin, admin_2_admin_model, \
     host_model_2_host, host_2_host_model
 from .domain.entities import Admin, Host
@@ -36,7 +36,11 @@ class HostRepoImpl(HostRepo):
         db.session.add(host_model)
         db.session.commit()
 
+    def delete(self, id):
+        HostModel.query.filter_by(id=id).delete()
+        ServiceModel.query.filter_by(host_id=id).delete()
+        db.session.commit()
+
     def all(self):
         hosts = HostModel.query.all()
         return [host_model_2_host(host) for host in hosts]
-

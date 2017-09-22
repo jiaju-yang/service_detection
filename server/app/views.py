@@ -1,10 +1,10 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request
 
 from .permission import admin_required
 from .domain.errors import IncorrectSign, IncorrectUsername, IncorrectPassword, \
     EmptyField
 from .domain.usecases import auth_view_token, auth_admin_token, \
-    get_user_by_token, add_host
+    get_user_by_token, add_host, delete_host
 from .repos import AdminRepoImpl, HostRepoImpl
 from . import status
 
@@ -31,7 +31,7 @@ def admin_auth():
         return status.respond({'msg': 'Incorrect password!'},
                               status.BAD_REQUEST)
     else:
-        return jsonify({'token': token})
+        return status.respond(({'token': token}))
 
 
 @main.route('/view_auth', methods=['POST'])
@@ -46,7 +46,7 @@ def view_auth():
 
 @main.route('/host', methods=['POST'])
 @admin_required
-def host():
+def host_add():
     try:
         add_host(HostRepoImpl(),
                  request.json.get('name', None),
@@ -57,3 +57,14 @@ def host():
             {'msg': 'Required field: {field}'.format(field=e.field)},
             status.BAD_REQUEST)
     return status.respond(status=status.CREATED)
+
+
+@main.route('/host/<int:id>', methods=['DELETE'])
+@admin_required
+def host_delete(id):
+    try:
+        delete_host(HostRepoImpl(), id)
+    except EmptyField:
+        return status.respond({'msg': 'Which host do u wanna delete?'},
+                              status.BAD_REQUEST)
+    return status.respond(status=status.SUCCESS)

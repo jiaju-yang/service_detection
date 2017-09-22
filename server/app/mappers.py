@@ -31,7 +31,7 @@ def host_2_host_model(host: Host):
         host, ('name', 'detail', 'address')),
                      services=[service_2_service_model(service, host.id) for
                                service in
-                               host.services] if host.services else None)
+                               host.services])
 
 
 def service_model_2_service(service_model: ServiceModel):

@@ -24,6 +24,10 @@ class HostRepo(metaclass=ABCMeta):
         pass
 
     @abstractmethod
+    def delete(self, id):
+        pass
+
+    @abstractmethod
     def all(self):
         r"""
 

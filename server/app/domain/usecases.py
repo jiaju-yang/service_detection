@@ -60,3 +60,9 @@ def add_host(repo: HostRepo, name, detail, address):
         raise EmptyField('address')
     host = Host(name, detail, address)
     repo.add(host)
+
+
+def delete_host(repo: HostRepo, id):
+    if not id:
+        raise EmptyField('id')
+    repo.delete(id)
