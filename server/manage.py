@@ -1,12 +1,14 @@
 #!/usr/bin/env python
-from app import create_app, db
-from flask_migrate import Migrate
+import os
 import click
+from flask_migrate import Migrate
+
+from app import create_app, db
 
 # This is for flask db init
 from app.models import AdminModel, HostModel, ServiceModel
 
-app = create_app('dev')
+app = create_app(os.getenv('FLASK_CONFIG') or 'default')
 migrate = Migrate(app, db)
 
 
@@ -24,4 +26,4 @@ def set_admin(username, password, sign, tip):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()
