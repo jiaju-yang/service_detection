@@ -35,3 +35,7 @@ class HostRepo(metaclass=ABCMeta):
         :rtype: list of Host
         """
         pass
+
+    @abstractmethod
+    def modify(self, host: Host):
+        pass

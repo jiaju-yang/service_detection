@@ -120,6 +120,14 @@ class Host(object):
     def services(self):
         return self._services
 
+    def to_json(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'detail': self.detail,
+            'address': self.address
+        }
+
 
 class Service(object):
     def __init__(self, id, name, detail, port):

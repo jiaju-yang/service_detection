@@ -7,6 +7,12 @@ from .errors import IncorrectSign, IncorrectUsername, IncorrectPassword, \
     EmptyField
 
 
+def _fields_required(fields, *keys):
+    for key in keys:
+        if not fields[key]:
+            raise EmptyField(key)
+
+
 def auth_view_token(repo: AdminRepo, sign):
     admin = repo.get()
     if not admin.is_sign_correct(sign):
@@ -54,15 +60,21 @@ def is_valid_admin(user):
 
 
 def add_host(repo: HostRepo, name, detail, address):
-    if not name:
-        raise EmptyField('name')
-    if not address:
-        raise EmptyField('address')
+    _fields_required(locals(), 'name', 'address')
     host = Host(name, detail, address)
     repo.add(host)
 
 
 def delete_host(repo: HostRepo, id):
-    if not id:
-        raise EmptyField('id')
+    _fields_required(locals(), 'id')
     repo.delete(id)
+
+
+def list_all_host(repo: HostRepo):
+    return repo.all()
+
+
+def modify_host(repo: HostRepo, id, name, detail, address):
+    _fields_required(locals(), 'id', 'name', 'address')
+    host = Host(name, detail, address, id=id)
+    repo.modify(host)

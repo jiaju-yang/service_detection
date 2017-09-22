@@ -4,7 +4,7 @@ from .permission import admin_required
 from .domain.errors import IncorrectSign, IncorrectUsername, IncorrectPassword, \
     EmptyField
 from .domain.usecases import auth_view_token, auth_admin_token, \
-    get_user_by_token, add_host, delete_host
+    get_user_by_token, add_host, delete_host, list_all_host, modify_host
 from .repos import AdminRepoImpl, HostRepoImpl
 from . import status
 
@@ -68,3 +68,29 @@ def host_delete(id):
         return status.respond({'msg': 'Which host do u wanna delete?'},
                               status.BAD_REQUEST)
     return status.respond(status=status.SUCCESS)
+
+
+@main.route('/host', methods=['GET'])
+@admin_required
+def host_list_all():
+    hosts = list_all_host(HostRepoImpl())
+    return status.respond([host.to_json() for host in hosts])
+
+
+@main.route('/host/<int:id>', methods=['PUT'])
+@admin_required
+def host_modify(id):
+    try:
+        modify_host(HostRepoImpl(), id,
+                    request.json.get('name', None),
+                    request.json.get('detail', None),
+                    request.json.get('address', None))
+    except EmptyField as e:
+        if e.field == 'id':
+            return status.respond({'msg': 'Which host do u wanna modify?'},
+                                  status.BAD_REQUEST)
+        else:
+            return status.respond(
+                {'msg': 'Required field: {field}'.format(field=e.field)},
+                status.BAD_REQUEST)
+    return status.respond()

@@ -44,3 +44,9 @@ class HostRepoImpl(HostRepo):
     def all(self):
         hosts = HostModel.query.all()
         return [host_model_2_host(host) for host in hosts]
+
+    def modify(self, host: Host):
+        host_model = host_2_host_model(host)
+        host_model.id = host.id
+        db.session.merge(host_model)
+        db.session.commit()
