@@ -13,6 +13,18 @@ def _fields_required(fields, *keys):
             raise EmptyField(key)
 
 
+def set_admin(repo: AdminRepo, username, original_password, sign=None,
+              tip=None):
+    admin = Admin(username, None, now(), sign, tip,
+                  original_password=original_password)
+    repo.set(admin)
+
+
+def get_tip(repo: AdminRepo):
+    admin = repo.get()
+    return admin.tip
+
+
 def auth_view_token(repo: AdminRepo, sign):
     admin = repo.get()
     if not admin.is_sign_correct(sign):
@@ -46,13 +58,6 @@ def get_user_by_token(repo: AdminRepo, token):
         elif role == AnonymousUser.role:
             return AnonymousUser.from_dict(token_content)
         return None
-
-
-def set_admin(repo: AdminRepo, username, original_password, sign=None,
-              tip=None):
-    admin = Admin(username, None, now(), sign, tip,
-                  original_password=original_password)
-    repo.set(admin)
 
 
 def is_valid_admin(user):

@@ -24,6 +24,6 @@ flask run
 ```
 ### Config supervisor, nginx and uwsgi
 ```shell
-sudo ln -s ~/services/service_detection/server/nginx.conf /etc/nginx/sites-enabled/service_detection.conf
-sudo ln -s ~/services/service_detection/server/supervisor.conf /etc/supervisor/conf.d/service_detection.conf
+sudo ln -s /home/psyche/services/service_detection/server/nginx.conf /etc/nginx/sites-enabled/service_detection.conf
+sudo ln -s /home/psyche/services/service_detection/server/supervisor.conf /etc/supervisor/conf.d/service_detection.conf
 ```

@@ -5,7 +5,7 @@ from .domain.errors import IncorrectSign, IncorrectUsername, IncorrectPassword, 
     EmptyField
 from .domain.usecases import auth_view_token, auth_admin_token, \
     get_user_by_token, add_host, delete_host, list_all_host, modify_host, \
-    add_service, delete_service, modify_service
+    add_service, delete_service, modify_service, get_tip
 from .repos import AdminRepoImpl, HostRepoImpl, ServiceRepoImpl
 from . import status
 
@@ -17,6 +17,11 @@ def parse_token():
     token = request.headers.get('token', None)
     user = get_user_by_token(AdminRepoImpl(), token)
     request.user = user
+
+
+@main.route('/tip', methods=['GET'])
+def tip():
+    return status.respond({'tip':  get_tip(AdminRepoImpl())})
 
 
 @main.route('/admin_auth', methods=['POST'])
