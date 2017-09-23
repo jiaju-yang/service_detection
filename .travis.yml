@@ -1,0 +1,27 @@
+language: python
+python:
+- '3.6'
+before_install:
+- openssl aes-256-cbc -K $encrypted_dd26434460f9_key -iv $encrypted_dd26434460f9_iv
+  -in id_rsa.enc -out ~/.ssh/id_rsa -d
+- chmod 600 ~/.ssh/id_rsa
+- echo -e "Host psychesworld.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+- cd server
+install:
+- pip install -r requirements.txt
+script:
+- python -m unittest tests/unit/*.py
+#addons:
+#  ssh_known_hosts:
+#  - psychesworld.com
+after_success:
+- ssh -p 2222 psyche@psychesworld.com "cd /home/psyche/services/service_detection && git fetch origin && git reset --hard origin/master && git clean -f -d && ./deploy.sh"
+#deploy:
+#  skip_cleanup: true
+#  provider: script
+#  script: fab -H $DEPLOY_HOSTS -p $DEPLOY_PASS prod deploy_from_travis cutover
+#  on:
+#    branch: master
+#notifications:
+#  email:
+#    - psychesworld@gmail.com
