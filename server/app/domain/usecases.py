@@ -2,7 +2,7 @@ from jwt import DecodeError
 
 from .repos import AdminRepo, HostRepo, ServiceRepo
 from .utils import decrypt_with_jwt, now
-from .entities import AnonymousUser, Admin, Host, Service
+from .entities import Anonymous, Admin, Host, Service
 from .errors import IncorrectSign, IncorrectUsername, IncorrectPassword, \
     EmptyField
 
@@ -29,7 +29,7 @@ def auth_view_token(repo: AdminRepo, sign):
     admin = repo.get()
     if not admin.is_sign_correct(sign):
         raise IncorrectSign()
-    user = AnonymousUser(sign)
+    user = Anonymous(sign)
     return user.token()
 
 
@@ -55,13 +55,17 @@ def get_user_by_token(repo: AdminRepo, token):
             admin = repo.get()
             admin.auth_at = token_content['auth_at']
             return admin
-        elif role == AnonymousUser.role:
-            return AnonymousUser.from_dict(token_content)
+        elif role == Anonymous.role:
+            return Anonymous.from_dict(token_content)
         return None
 
 
 def is_valid_admin(user):
     return user and user.role == Admin.role and user.is_auth_valid()
+
+
+def is_valid_anonymous(repo: AdminRepo, user):
+    return user and user.role == Anonymous.role and user.is_auth_valid(repo.get())
 
 
 def add_host(repo: HostRepo, name, detail, address):

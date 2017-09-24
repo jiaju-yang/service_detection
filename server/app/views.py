@@ -1,6 +1,6 @@
 from flask import Blueprint, request
 
-from .permission import admin_required
+from .permission import admin_required, anonymous_required
 from .domain.errors import IncorrectSign, IncorrectUsername, IncorrectPassword, \
     EmptyField
 from .domain.usecases import auth_view_token, auth_admin_token, \
@@ -77,7 +77,7 @@ def host_delete(id):
 
 
 @main.route('/host', methods=['GET'])
-@admin_required
+@anonymous_required
 def host_list_all():
     hosts = list_all_host(HostRepoImpl())
     return status.respond([host.to_json() for host in hosts])

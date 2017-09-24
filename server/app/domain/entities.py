@@ -1,5 +1,5 @@
 from .utils import encrypt_irreversibly, encrypt_with_jwt, now, \
-    datetime_from_str, datetime_to_str, auth_valid_period
+    datetime_from_str, datetime_to_str, auth_valid_period, is_auth_time_valid
 
 
 class Admin(object):
@@ -54,10 +54,7 @@ class Admin(object):
         return True if self._sign == sign else False
 
     def is_auth_valid(self):
-        if not self._auth_at:
-            return False
-        now_time = now()
-        return now_time - auth_valid_period() < self._auth_at < now_time
+        return self._auth_at and is_auth_time_valid(self._auth_at)
 
     def token(self):
         return encrypt_with_jwt(
@@ -65,20 +62,16 @@ class Admin(object):
              'auth_at': datetime_to_str(now())})
 
 
-class AnonymousUser(object):
+class Anonymous(object):
     role = 'anonymous'
 
     def __init__(self, sign, auth_at=None):
         self._sign = sign
         self._auth_at = auth_at
 
-    def has_view_permission(self, admin: Admin):
-        # if not admin.sign:
-        #     return True
-        # if self._token == admin.sign:
-        #     return True
-        # return False
-        pass
+    def is_auth_valid(self, admin: Admin):
+        return self._auth_at and self._sign == admin.sign and is_auth_time_valid(
+            self._auth_at)
 
     @classmethod
     def from_dict(cls, adict):

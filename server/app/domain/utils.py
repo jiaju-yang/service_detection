@@ -22,6 +22,11 @@ def auth_valid_period():
     return timedelta(days=current_app.config['AUTH_VALID_PERIOD_IN_DAY'])
 
 
+def is_auth_time_valid(auth_at):
+    now_time = now()
+    return now_time - auth_valid_period() < auth_at < now_time
+
+
 def encrypt_irreversibly(string):
     algo = sha256()
     algo.update(string.encode(encoding='utf-8'))
