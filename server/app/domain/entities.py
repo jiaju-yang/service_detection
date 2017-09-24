@@ -51,10 +51,11 @@ class Admin(object):
         return encrypt_irreversibly(password) == self.password
 
     def is_sign_correct(self, sign):
-        return True if self._sign == sign else False
+        return self._sign == sign
 
     def is_auth_valid(self):
-        return self._auth_at and is_auth_time_valid(self._auth_at)
+        return self._auth_at and self._auth_at > self._updated_at and is_auth_time_valid(
+            self._auth_at)
 
     def token(self):
         return encrypt_with_jwt(
