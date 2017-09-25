@@ -16,4 +16,5 @@ sudo ln -sf /home/psyche/services/service_detection/server/nginx.conf /etc/nginx
 sudo ln -sf /home/psyche/services/service_detection/server/supervisor.conf /etc/supervisor/conf.d/service_detection.conf
 echo '[-] Configurated nginx and supervisor'
 sudo service supervisor restart
+sudo service nginx restart
 echo '[-] Deploy successfully'
