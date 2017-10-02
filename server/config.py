@@ -22,6 +22,7 @@ class ProdConfig(Config):
     DEBUG = False
     SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'prod-data.db')
 
+
 config = {
     'dev': DevConfig,
     'testing': TestingConfig,

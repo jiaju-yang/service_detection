@@ -11,7 +11,7 @@ def create_app(config_name):
     app.config.from_object(config[config_name])
     db.init_app(app)
 
-    from .views import main
-    app.register_blueprint(main)
+    from . import views
+    views.register(app)
 
     return app
