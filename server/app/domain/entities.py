@@ -1,5 +1,5 @@
 from .utils import encrypt_irreversibly, encrypt_with_jwt, now, \
-    datetime_from_str, datetime_to_str, auth_valid_period, is_auth_time_valid
+    datetime_from_str, datetime_to_str, is_auth_time_valid
 
 
 class Admin(object):
@@ -7,42 +7,22 @@ class Admin(object):
 
     def __init__(self, username, password, updated_at, sign=None, tip=None,
                  *, original_password=None):
-        self._username = username
-        self._password = password
-        self._updated_at = updated_at
-        self._sign = sign
-        self._tip = tip
+        self.username = username
+        self.password = password
+        self.updated_at = updated_at
+        self.sign = sign
+        self.tip = tip
         if original_password:
-            self._password = encrypt_irreversibly(original_password)
+            self.password = encrypt_irreversibly(original_password)
         self._auth_at = None
-
-    @property
-    def username(self):
-        return self._username
-
-    @property
-    def password(self):
-        return self._password
-
-    @property
-    def sign(self):
-        return self._sign
-
-    @property
-    def tip(self):
-        return self._tip
 
     @property
     def auth_at(self):
         return self._auth_at
 
     @auth_at.setter
-    def auth_at(self, auth_at):
-        self._auth_at = datetime_from_str(auth_at)
-
-    @property
-    def updated_at(self):
-        return self._updated_at
+    def auth_at(self, auth_at_str):
+        self._auth_at = datetime_from_str(auth_at_str)
 
     def is_username_correct(self, username):
         return username == self.username
@@ -51,10 +31,10 @@ class Admin(object):
         return encrypt_irreversibly(password) == self.password
 
     def is_sign_correct(self, sign):
-        return self._sign == sign
+        return self.sign == sign
 
     def is_auth_valid(self):
-        return self._auth_at and self._auth_at > self._updated_at and is_auth_time_valid(
+        return self._auth_at and self._auth_at > self.updated_at and is_auth_time_valid(
             self._auth_at)
 
     def token(self):
@@ -67,12 +47,12 @@ class Anonymous(object):
     role = 'anonymous'
 
     def __init__(self, sign, auth_at=None):
-        self._sign = sign
-        self._auth_at = auth_at
+        self.sign = sign
+        self.auth_at = auth_at
 
     def is_auth_valid(self, admin: Admin):
-        return self._auth_at and self._sign == admin.sign and is_auth_time_valid(
-            self._auth_at)
+        return self.auth_at and self.sign == admin.sign and is_auth_time_valid(
+            self.auth_at)
 
     @classmethod
     def from_dict(cls, adict):
@@ -80,39 +60,19 @@ class Anonymous(object):
 
     def token(self):
         return encrypt_with_jwt(
-            {'role': self.role, 'sign': self._sign,
+            {'role': self.role, 'sign': self.sign,
              'auth_at': datetime_to_str(now())})
 
 
 class Host(object):
     def __init__(self, name, detail, address, services=None, id=None):
-        self._name = name
-        self._detail = detail
-        self._address = address
-        self._services = []
+        self.name = name
+        self.detail = detail
+        self.address = address
+        self.services = []
         if services:
-            self._services.extend(services)
-        self._id = id
-
-    @property
-    def id(self):
-        return self._id
-
-    @property
-    def name(self):
-        return self._name
-
-    @property
-    def detail(self):
-        return self._detail
-
-    @property
-    def address(self):
-        return self._address
-
-    @property
-    def services(self):
-        return self._services
+            self.services.extend(services)
+        self.id = id
 
     def to_json(self):
         return {
@@ -126,26 +86,10 @@ class Host(object):
 
 class Service(object):
     def __init__(self, name, detail, port, id=None):
-        self._name = name
-        self._detail = detail
-        self._port = port
-        self._id = id
-
-    @property
-    def id(self):
-        return self._id
-
-    @property
-    def name(self):
-        return self._name
-
-    @property
-    def detail(self):
-        return self._detail
-
-    @property
-    def port(self):
-        return self._port
+        self.name = name
+        self.detail = detail
+        self.port = port
+        self.id = id
 
     def to_json(self):
         return {

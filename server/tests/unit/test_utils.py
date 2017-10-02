@@ -2,6 +2,7 @@ import unittest
 
 from app import create_app
 from app.domain.utils import encrypt_with_jwt, decrypt_with_jwt
+from functools import partial, wraps
 
 
 class JWTTestCase(unittest.TestCase):
