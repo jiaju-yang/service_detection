@@ -8,46 +8,48 @@ from app.domain.utils import encrypt_with_jwt, decrypt_with_jwt, \
     encrypt_irreversibly
 
 
-class JWTTestCase(unittest.TestCase):
+class BasicFlaskAppEnvironment(unittest.TestCase):
     def setUp(self):
-        self.app = create_app('testing')
+        app = create_app('testing')
+        self.app_context = app.app_context()
+        self.app_context.push()
 
+    def tearDown(self):
+        self.app_context.pop()
+
+
+class JWTTestCase(BasicFlaskAppEnvironment):
     def test_encryption(self):
-        with self.app.app_context():
-            adict = {'name': 'psyche'}
-            token = encrypt_with_jwt(adict)
-            self.assertEqual(type(token), str)
-            self.assertEqual(decrypt_with_jwt(token), adict)
+        adict = {'name': 'psyche'}
+        token = encrypt_with_jwt(adict)
+        self.assertEqual(type(token), str)
+        self.assertEqual(decrypt_with_jwt(token), adict)
 
 
 class DatetimeTestCase(unittest.TestCase):
     def test_datetime_string_conversion(self):
         now = datetime.now()
-        self.assertEqual(datetime_from_str(datetime_to_str(now)), now)
+        datetime_str = datetime_to_str(now)
+        self.assertEqual(type(datetime_str), str)
+        self.assertEqual(datetime_from_str(datetime_str), now)
 
 
-class AuthTestCase(unittest.TestCase):
-    def setUp(self):
-        self.app = create_app('testing')
-
+class AuthTestCase(BasicFlaskAppEnvironment):
     def test_valid_auth_period(self):
-        with self.app.app_context():
-            self.assertEqual(auth_valid_period().total_seconds(),
-                             current_app.config[
-                                 'AUTH_VALID_PERIOD_IN_DAY'] * 3600 * 24)
+        self.assertEqual(auth_valid_period().total_seconds(),
+                         current_app.config[
+                             'AUTH_VALID_PERIOD_IN_DAY'] * 3600 * 24)
 
     def test_valid_auth_time(self):
-        with self.app.app_context():
-            self.assertTrue(is_auth_time_valid(datetime.now()))
-            yesterday = datetime.now() - timedelta(days=1)
-            self.assertTrue(is_auth_time_valid(yesterday))
+        self.assertTrue(is_auth_time_valid(datetime.now()))
+        yesterday = datetime.now() - timedelta(days=1)
+        self.assertTrue(is_auth_time_valid(yesterday))
 
     def test_invalid_auth_time(self):
-        with self.app.app_context():
-            seven_days_ago = datetime.now() - timedelta(days=7)
-            self.assertFalse(is_auth_time_valid(seven_days_ago))
-            future = datetime.now() + timedelta(seconds=10)
-            self.assertFalse(is_auth_time_valid(future))
+        seven_days_ago = datetime.now() - timedelta(days=7)
+        self.assertFalse(is_auth_time_valid(seven_days_ago))
+        future = datetime.now() + timedelta(seconds=10)
+        self.assertFalse(is_auth_time_valid(future))
 
 
 class EncryptionTestCase(unittest.TestCase):
