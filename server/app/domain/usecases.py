@@ -1,7 +1,7 @@
 from jwt import DecodeError
 
 from .repos import AdminRepo, HostRepo, ServiceRepo
-from .utils import decrypt_with_jwt, now
+from .utils import decrypt_with_jwt, now, datetime_from_str
 from .entities import Anonymous, Admin, Host, Service
 from .errors import IncorrectSign, IncorrectUsername, IncorrectPassword, \
     EmptyField
@@ -15,7 +15,7 @@ def _fields_required(fields, *keys):
 
 def set_admin(repo: AdminRepo, username, original_password, sign=None,
               tip=None):
-    admin = Admin(username, None, now(), sign, tip,
+    admin = Admin(username, now(), sign, tip,
                   original_password=original_password)
     repo.set(admin)
 
@@ -29,7 +29,7 @@ def auth_view_token(repo: AdminRepo, sign):
     admin = repo.get()
     if not admin.is_sign_correct(sign):
         raise IncorrectSign()
-    user = Anonymous(sign)
+    user = Anonymous(sign, now())
     return user.token()
 
 
@@ -39,6 +39,7 @@ def auth_admin_token(repo: AdminRepo, username, password):
         raise IncorrectUsername()
     if not admin.is_password_correct(password):
         raise IncorrectPassword()
+    admin.auth_at = now()
     return admin.token()
 
 
@@ -53,7 +54,7 @@ def get_user_by_token(repo: AdminRepo, token):
         role = token_content.get('role', None)
         if role == Admin.role:
             admin = repo.get()
-            admin.auth_at = token_content['auth_at']
+            admin.auth_at = datetime_from_str(token_content['auth_at'])
             return admin
         elif role == Anonymous.role:
             return Anonymous.from_dict(token_content)
@@ -65,7 +66,8 @@ def is_valid_admin(user):
 
 
 def is_valid_anonymous(repo: AdminRepo, user):
-    return user and user.role == Anonymous.role and user.is_auth_valid(repo.get())
+    return user and user.role == Anonymous.role and user.is_auth_valid(
+        repo.get())
 
 
 def add_host(repo: HostRepo, name, detail, address):

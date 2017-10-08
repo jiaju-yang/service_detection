@@ -4,6 +4,7 @@ import click
 from flask_migrate import Migrate
 
 from app import create_app, db
+from app.domain.errors import EmptyField
 
 # This is for flask db init
 from app.models import AdminModel, HostModel, ServiceModel
@@ -21,8 +22,12 @@ def set_admin(username, password, sign, tip):
     from app.domain.usecases import set_admin
     from app.repos import AdminRepoImpl
 
-    set_admin(AdminRepoImpl(), username, password, sign, tip)
-    click.echo('Initialized db data.')
+    try:
+        set_admin(AdminRepoImpl(), username, password, sign, tip)
+    except EmptyField as e:
+        click.echo('!!!U should set {missed_field} for admin!'.format(missed_field=e.field))
+    else:
+        click.echo('Initialized db data.')
 
 
 if __name__ == '__main__':

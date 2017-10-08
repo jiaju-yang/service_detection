@@ -9,10 +9,12 @@ from . import status
 def anonymous_required(func):
     @wraps(func)
     def wrap(*args, **kwargs):
-        if is_valid_admin(request.user) or is_valid_anonymous(AdminRepoImpl(), request.user):
+        if is_valid_admin(request.user) or is_valid_anonymous(AdminRepoImpl(),
+                                                              request.user):
             return func(*args, **kwargs)
         else:
-            return status.respond({'msg': 'Invalid user!'}, status.BAD_REQUEST)
+            return status.respond({'msg': 'Invalid user!'}, status.UNAUTHORIZED)
+
     return wrap
 
 
@@ -22,5 +24,7 @@ def admin_required(func):
         if is_valid_admin(request.user):
             return func(*args, **kwargs)
         else:
-            return status.respond({'msg': 'Invalid administrator!'}, status.BAD_REQUEST)
+            return status.respond({'msg': 'Invalid administrator!'},
+                                  status.UNAUTHORIZED)
+
     return wrap

@@ -1,28 +1,29 @@
-from .utils import encrypt_irreversibly, encrypt_with_jwt, now, \
-    datetime_from_str, datetime_to_str, is_auth_time_valid
+from .utils import encrypt_irreversibly, encrypt_with_jwt, datetime_from_str, \
+    datetime_to_str, is_auth_time_valid
+from .errors import EmptyField
+
+
+def _fields_required(fields, *keys):
+    for key in keys:
+        if not fields[key]:
+            raise EmptyField(key)
 
 
 class Admin(object):
     role = 'admin'
 
-    def __init__(self, username, password, updated_at, sign=None, tip=None,
-                 *, original_password=None):
+    def __init__(self, username, updated_at, sign=None, tip=None, auth_at=None,
+                 *, original_password=None, encrypted_password=None):
+        _fields_required(locals(), 'username', 'updated_at')
         self.username = username
-        self.password = password
         self.updated_at = updated_at
         self.sign = sign
         self.tip = tip
-        if original_password:
-            self.password = encrypt_irreversibly(original_password)
-        self._auth_at = None
-
-    @property
-    def auth_at(self):
-        return self._auth_at
-
-    @auth_at.setter
-    def auth_at(self, auth_at_str):
-        self._auth_at = datetime_from_str(auth_at_str)
+        if not original_password and not encrypted_password:
+            raise EmptyField('password')
+        self.password = encrypted_password or encrypt_irreversibly(
+            original_password)
+        self.auth_at = auth_at
 
     def is_username_correct(self, username):
         return username == self.username
@@ -34,25 +35,25 @@ class Admin(object):
         return self.sign == sign
 
     def is_auth_valid(self):
-        return self._auth_at and self._auth_at > self.updated_at and is_auth_time_valid(
-            self._auth_at)
+        return self.auth_at and self.auth_at > self.updated_at and \
+               is_auth_time_valid(self.auth_at)
 
     def token(self):
         return encrypt_with_jwt(
-            {'role': self.role, 'username': self.username,
-             'auth_at': datetime_to_str(now())})
+            {'role': self.role, 'auth_at': datetime_to_str(self.auth_at)})
 
 
 class Anonymous(object):
     role = 'anonymous'
 
-    def __init__(self, sign, auth_at=None):
+    def __init__(self, sign, auth_at):
         self.sign = sign
         self.auth_at = auth_at
 
     def is_auth_valid(self, admin: Admin):
-        return self.auth_at and self.sign == admin.sign and is_auth_time_valid(
-            self.auth_at)
+        return self.auth_at and self.sign == admin.sign and \
+               self.auth_at > admin.updated_at and \
+               is_auth_time_valid(self.auth_at)
 
     @classmethod
     def from_dict(cls, adict):
@@ -61,7 +62,7 @@ class Anonymous(object):
     def token(self):
         return encrypt_with_jwt(
             {'role': self.role, 'sign': self.sign,
-             'auth_at': datetime_to_str(now())})
+             'auth_at': datetime_to_str(self.auth_at)})
 
 
 class Host(object):

@@ -2,25 +2,15 @@ import unittest
 from datetime import datetime, timedelta
 from flask import current_app
 
-from app import create_app
+from tests.unit.utils import FlaskAppEnvironmentMixin
 from app.domain.utils import encrypt_with_jwt, decrypt_with_jwt, \
     datetime_from_str, datetime_to_str, auth_valid_period, is_auth_time_valid, \
     encrypt_irreversibly
 
 
-class BasicFlaskAppEnvironment(unittest.TestCase):
-    def setUp(self):
-        app = create_app('testing')
-        self.app_context = app.app_context()
-        self.app_context.push()
-
-    def tearDown(self):
-        self.app_context.pop()
-
-
-class JWTTestCase(BasicFlaskAppEnvironment):
+class JWTTestCase(FlaskAppEnvironmentMixin):
     def test_encryption(self):
-        adict = {'name': 'psyche'}
+        adict = {'name': 'test'}
         token = encrypt_with_jwt(adict)
         self.assertEqual(type(token), str)
         self.assertEqual(decrypt_with_jwt(token), adict)
@@ -34,7 +24,7 @@ class DatetimeTestCase(unittest.TestCase):
         self.assertEqual(datetime_from_str(datetime_str), now)
 
 
-class AuthTestCase(BasicFlaskAppEnvironment):
+class AuthTestCase(FlaskAppEnvironmentMixin):
     def test_valid_auth_period(self):
         self.assertEqual(auth_valid_period().total_seconds(),
                          current_app.config[

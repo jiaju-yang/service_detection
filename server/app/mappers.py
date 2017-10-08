@@ -10,8 +10,9 @@ def require_fields(o, keys):
 
 
 def admin_model_2_admin(admin_model: AdminModel):
-    return Admin(**require_fields(
-        admin_model, ('username', 'password', 'updated_at', 'sign', 'tip')))
+    return Admin(**{**require_fields(
+        admin_model, ('username', 'updated_at', 'sign', 'tip')),
+                    **{'encrypted_password': admin_model.password}})
 
 
 def admin_2_admin_model(admin: Admin):
