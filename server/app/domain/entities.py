@@ -9,6 +9,35 @@ def _fields_required(fields, *keys):
             raise EmptyField(key)
 
 
+class ToDictMixin(object):
+    _dict_fields = tuple()
+
+    def to_dict(self):
+        return dict(self._parse_field(field) for field in self._dict_fields)
+
+    def _parse_field(self, field):
+        if isinstance(field, tuple) or isinstance(field, list):
+            key, *rest = field
+            alias = rest[0] if rest else key
+        elif isinstance(field, str):
+            key = field
+            alias = key
+        else:
+            raise TypeError()
+        value = getattr(self, key)
+        return alias, self._traverse(value)
+
+    def _traverse(self, value):
+        if isinstance(value, ToDictMixin):
+            return value.to_dict()
+        elif isinstance(value, (list, tuple)):
+            return [self._traverse(item) for item in value]
+        elif isinstance(value, dict):
+            return {key: self._traverse(value) for key, value in value.items()}
+        else:
+            return value
+
+
 class Admin(object):
     role = 'admin'
 
@@ -65,7 +94,9 @@ class Anonymous(object):
              'auth_at': datetime_to_str(self.auth_at)})
 
 
-class Host(object):
+class Host(ToDictMixin):
+    _dict_fields = ('id', 'name', 'detail', 'address', 'services')
+
     def __init__(self, name, detail, address, services=None, id=None):
         self.name = name
         self.detail = detail
@@ -75,27 +106,12 @@ class Host(object):
             self.services.extend(services)
         self.id = id
 
-    def to_json(self):
-        return {
-            'id': self.id,
-            'name': self.name,
-            'detail': self.detail,
-            'address': self.address,
-            'services': [service.to_json() for service in self.services]
-        }
 
+class Service(ToDictMixin):
+    _dict_fields = ('id', 'name', 'detail', 'port')
 
-class Service(object):
     def __init__(self, name, detail, port, id=None):
         self.name = name
         self.detail = detail
         self.port = port
         self.id = id
-
-    def to_json(self):
-        return {
-            'id': self.id,
-            'name': self.name,
-            'detail': self.detail,
-            'port': self.port
-        }

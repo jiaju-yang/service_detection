@@ -40,7 +40,7 @@ def host_delete(id):
 @anonymous_required
 def host_list_all():
     hosts = list_all_host(HostRepoImpl())
-    return status.respond([host.to_json() for host in hosts])
+    return status.respond([host.to_dict() for host in hosts])
 
 
 @host.route('/<int:id>', methods=['PUT'])
