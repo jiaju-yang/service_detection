@@ -1,5 +1,4 @@
-import sys
-
+from .domain.errors import NoAdministratorFound
 from .domain.repos import AdminRepo, HostRepo, ServiceRepo
 from .models import AdminModel, HostModel, ServiceModel
 from .mappers import admin_model_2_admin, admin_2_admin_model, \
@@ -10,14 +9,10 @@ from . import db
 
 class AdminRepoImpl(AdminRepo):
     def get(self):
-        admins = AdminModel.query.all()
-        if len(admins) == 0:
-            print('You should create a administrator!', file=sys.stderr)
-            sys.exit(1)
-        if len(admins) > 1:
-            print('Only one administrator is supported!', file=sys.stderr)
-            sys.exit(1)
-        return admin_model_2_admin(admins[0])
+        admin = AdminModel.query.get(1)
+        if not admin:
+            raise NoAdministratorFound()
+        return admin_model_2_admin(admin)
 
     def set(self, admin: Admin):
         admin_model = admin_2_admin_model(admin)

@@ -1,15 +1,23 @@
-class IncorrectSign(Exception):
+class SDException(Exception):
     pass
 
 
-class IncorrectPassword(Exception):
+class IncorrectSign(SDException):
     pass
 
 
-class IncorrectUsername(Exception):
+class IncorrectPassword(SDException):
     pass
 
 
-class EmptyField(Exception):
+class IncorrectUsername(SDException):
+    pass
+
+
+class EmptyField(SDException):
     def __init__(self, field):
         self.field = field
+
+
+class NoAdministratorFound(SDException):
+    pass

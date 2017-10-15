@@ -1,5 +1,6 @@
 from flask import request
 
+from ..domain.errors import NoAdministratorFound, SDException
 from ..repos import AdminRepoImpl
 from ..domain.usecases import get_user_by_token
 from .. import status
@@ -12,6 +13,13 @@ def register(app):
     @app.errorhandler(404)
     def not_found(error):
         return status.respond({'msg': 'Not found url.'}, status.NOT_FOUND)
+
+    @app.errorhandler(SDException)
+    def handle_error(e):
+        if isinstance(e, NoAdministratorFound):
+            return status.respond({'msg': 'Please create an administrator first.'}, status.INTERNAL_SERVER_ERROR)
+        else:
+            return status.respond({'msg': 'Unknown error just happened.'}, status.INTERNAL_SERVER_ERROR)
 
     @app.before_request
     def parse_token():
