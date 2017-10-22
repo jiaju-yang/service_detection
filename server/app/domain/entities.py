@@ -3,6 +3,10 @@ from .utils import encrypt_irreversibly, encrypt_with_jwt, datetime_from_str, \
 from .errors import EmptyField
 
 
+class DomainModel(object):
+    pass
+
+
 def _fields_required(fields, *keys):
     for key in keys:
         if not fields[key]:
@@ -38,7 +42,7 @@ class ToDictMixin(object):
             return value
 
 
-class Admin(object):
+class Admin(DomainModel):
     role = 'admin'
 
     def __init__(self, username, updated_at, sign=None, tip=None, auth_at=None,
@@ -72,7 +76,7 @@ class Admin(object):
             {'role': self.role, 'auth_at': datetime_to_str(self.auth_at)})
 
 
-class Anonymous(object):
+class Anonymous(DomainModel):
     role = 'anonymous'
 
     def __init__(self, sign, auth_at):
@@ -94,7 +98,7 @@ class Anonymous(object):
              'auth_at': datetime_to_str(self.auth_at)})
 
 
-class Host(ToDictMixin):
+class Host(DomainModel, ToDictMixin):
     _dict_fields = ('id', 'name', 'detail', 'address', 'services')
 
     def __init__(self, name, detail, address, services=None, id=None):
@@ -107,7 +111,7 @@ class Host(ToDictMixin):
         self.id = id
 
 
-class Service(ToDictMixin):
+class Service(DomainModel, ToDictMixin):
     _dict_fields = ('id', 'name', 'detail', 'port')
 
     def __init__(self, name, detail, port, id=None):

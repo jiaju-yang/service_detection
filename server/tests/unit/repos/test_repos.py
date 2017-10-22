@@ -1,33 +1,53 @@
 from datetime import datetime
 
+from app import db
 from app.domain.entities import Admin, Host, Service
 from app.domain.errors import NoAdministratorFound
-from app.models import ServiceModel
+from app.repos import tables, AdminRepoImpl, HostRepoImpl, ServiceRepoImpl
 from tests.unit.utils import FlaskAppEnvironmentMixin
-from app import db
-from app.repos import AdminRepoImpl, HostRepoImpl, ServiceRepoImpl
 
 
 class DbEnvironmentMixin(FlaskAppEnvironmentMixin):
     def setUp(self):
         super().setUp()
-        db.create_all()
+        tables.drop_all(db.engine)
+        tables.create_all(db.engine)
 
     def tearDown(self):
-        db.session.remove()
-        db.drop_all()
+        tables.drop_all(db.engine)
         super().tearDown()
 
 
 class AdminRepoImplTestCase(DbEnvironmentMixin):
+    def setUp(self):
+        super().setUp()
+        self.admin1_data = {
+            'username': 'test',
+            'original_password': '123',
+            'updated_at': datetime.now()
+        }
+        self.admin2_data = {
+            'username': 'test2',
+            'original_password': '1234',
+            'updated_at': datetime.now()
+        }
+
     def test_admin_persistence(self):
         repo = AdminRepoImpl()
-        username = 'test'
-        password = '123'
-        repo.set(Admin(username, datetime.now(), original_password=password))
+        repo.set(Admin(**self.admin1_data))
         admin = repo.get()
-        self.assertEqual(admin.username, username)
-        self.assertNotEqual(admin.password, password)
+        self.assertEqual(admin.username, self.admin1_data['username'])
+        self.assertNotEqual(admin.password,
+                            self.admin1_data['original_password'])
+
+    def test_multiple_admin_persistence(self):
+        repo = AdminRepoImpl()
+        repo.set(Admin(**self.admin1_data))
+        repo.set(Admin(**self.admin2_data))
+        admin = repo.get()
+        self.assertEqual(admin.username, self.admin2_data['username'])
+        self.assertNotEqual(admin.password,
+                            self.admin2_data['original_password'])
 
     def test_no_admin_create(self):
         repo = AdminRepoImpl()
@@ -90,7 +110,7 @@ class ServiceRepoImplTestCase(DbEnvironmentMixin):
         self.host_repo = HostRepoImpl()
         self.service_repo = ServiceRepoImpl()
         host_data = {'name': 'localhost', 'detail': 'this machine',
-                          'address': '127.0.0.1'}
+                     'address': '127.0.0.1'}
         host = Host(**host_data)
         self.host_repo.add(host)
         self.service1_data = {'name': 'nginx', 'detail': 'nginx service',
@@ -98,17 +118,26 @@ class ServiceRepoImplTestCase(DbEnvironmentMixin):
         self.service2_data = {'name': 'postgres', 'detail': 'postgres database',
                               'port': 5432}
 
-    def test_one_service_persistence(self):
+    def test_service_persistence(self):
         host_from_persistence = self.host_repo.all()[0]
-        service = Service(**self.service1_data)
-        self.service_repo.add(host_from_persistence.id, service)
+        service1 = Service(**self.service1_data)
+        service2 = Service(**self.service2_data)
+        self.service_repo.add(host_from_persistence.id, service1)
+        self.service_repo.add(host_from_persistence.id, service2)
+
         host_from_persistence = self.host_repo.all()[0]
         services_from_persistence = host_from_persistence.services
-        self.assertEqual(len(services_from_persistence), 1)
-        service_from_persistence = services_from_persistence[0]
+        self.assertEqual(len(services_from_persistence), 2)
+
+        service1_from_persistence = services_from_persistence[0]
         for key in self.service1_data.keys():
-            self.assertEqual(getattr(service, key),
-                             getattr(service_from_persistence, key))
+            self.assertEqual(getattr(service1, key),
+                             getattr(service1_from_persistence, key))
+
+        service2_from_persistence = services_from_persistence[1]
+        for key in self.service1_data.keys():
+            self.assertEqual(getattr(service2, key),
+                             getattr(service2_from_persistence, key))
 
     def test_modify(self):
         host_from_persistence = self.host_repo.all()[0]
@@ -123,8 +152,9 @@ class ServiceRepoImplTestCase(DbEnvironmentMixin):
         services_from_persistence = self.host_repo.all()[0].services
         self.assertEqual(len(services_from_persistence), 1)
         modified_service_from_persistence = services_from_persistence[0]
-        for key in (list(self.service1_data.keys()) + ['id']):
-            self.assertEqual(getattr(modified_service, key), getattr(modified_service_from_persistence, key))
+        for key in (list(self.service2_data.keys()) + ['id']):
+            self.assertEqual(getattr(modified_service, key),
+                             getattr(modified_service_from_persistence, key))
 
     def test_delete(self):
         service = Service(**self.service1_data)

@@ -1,16 +1,19 @@
 #!/usr/bin/env python
 import os
-import click
-from flask_migrate import Migrate
 
-from app import create_app, db
+import click
+
+from app import create_app
 from app.domain.errors import EmptyField
 
-# This is for flask db init
-from app.models import AdminModel, HostModel, ServiceModel
-
 app = create_app(os.getenv('FLASK_CONFIG') or 'default')
-migrate = Migrate(app, db)
+
+
+@app.cli.command()
+def init_db():
+    from app import db
+    from app.repos import tables
+    tables.create_all(db.engine)
 
 
 @app.cli.command()

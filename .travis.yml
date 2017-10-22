@@ -15,7 +15,7 @@ script:
 #  ssh_known_hosts:
 #  - psychesworld.com
 after_success:
-- ssh -p 2222 psyche@psychesworld.com "cd /home/psyche/services/service_detection && git fetch origin && git reset --hard origin/master && git clean -f -d && ./deploy.sh"
+- ssh psyche@psychesworld.com "cd /home/psyche/services/service_detection && git fetch origin && git reset --hard origin/master && git clean -f -d && ./deploy.sh"
 #deploy:
 #  skip_cleanup: true
 #  provider: script
