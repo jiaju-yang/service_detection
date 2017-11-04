@@ -1,7 +1,9 @@
 from functools import wraps
+
 from flask import request
 
-from .domain.usecases import is_valid_admin, is_valid_anonymous
+from app.domain.usecases import is_valid_admin, is_valid_anonymous
+
 from . import status
 
 

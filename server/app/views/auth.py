@@ -1,9 +1,10 @@
 from flask import Blueprint, request
 
-from app import status
 from app.domain.errors import (IncorrectSign, IncorrectUsername,
                                IncorrectPassword)
 from app.domain.usecases import auth_view_token, get_tip, auth_admin_token
+
+from . import status
 
 auth = Blueprint('auth', __name__)
 

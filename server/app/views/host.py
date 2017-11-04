@@ -1,10 +1,11 @@
 from flask import Blueprint, request
 
-from app.permission import admin_required, anonymous_required
 from app.domain.errors import EmptyField
 from app.domain.usecases import add_host, delete_host, list_all_host, \
     modify_host
-from app import status
+
+from . import status
+from .permission import admin_required, anonymous_required
 
 host = Blueprint('host', __name__)
 

@@ -1,9 +1,10 @@
 from flask import Blueprint, request
 
-from app.permission import admin_required
 from app.domain.errors import EmptyField
 from app.domain.usecases import add_service, modify_service, delete_service
-from app import status
+
+from . import status
+from .permission import admin_required
 
 service = Blueprint('service', __name__)
 

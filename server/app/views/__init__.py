@@ -2,8 +2,8 @@ from flask import request
 
 from app.domain.errors import NoAdministratorFound, SDException
 from app.domain.usecases import get_user_by_token
-from app import status
 
+from . import status
 from .auth import auth
 from .host import host
 from .service import service
