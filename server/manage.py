@@ -10,7 +10,7 @@ app = create_app(os.getenv('FLASK_CONFIG') or 'default')
 
 
 @app.cli.command()
-def init_db():
+def init():
     from app import db
     from app.repos import tables
     tables.create_all(db.engine)

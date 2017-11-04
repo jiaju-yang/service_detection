@@ -10,9 +10,7 @@ export FLASK_CONFIG=dev     # Development server
 ```
 ### Initialize database
 ```shell
-flask db init
-flask db migrate
-flask db upgrade
+flask init
 ```
 ### Create an administrator
 ```shell
