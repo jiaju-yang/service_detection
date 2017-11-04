@@ -1,10 +1,6 @@
-from app.domain.repos import repo_factory
-
-
-def build(app):
+def get(app):
     repo_config = RepoConfig(app)
-    repos = repo_config.get_repos()
-    repo_factory.build(**repos)
+    return repo_config.get_repos()
 
 
 def init(app):
