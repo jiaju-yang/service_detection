@@ -1,11 +1,9 @@
 from flask import Blueprint, request
 
-from ..permission import admin_required
-from ..domain.errors import EmptyField
-from ..domain.usecases import add_service, modify_service, delete_service
-from ..repos import ServiceRepoImpl
-from .. import status
-
+from app.permission import admin_required
+from app.domain.errors import EmptyField
+from app.domain.usecases import add_service, modify_service, delete_service
+from app import status
 
 service = Blueprint('service', __name__)
 
@@ -14,8 +12,7 @@ service = Blueprint('service', __name__)
 @admin_required
 def service_add():
     try:
-        add_service(ServiceRepoImpl(),
-                    request.json.get('host_id', None),
+        add_service(request.json.get('host_id', None),
                     request.json.get('name', None),
                     request.json.get('detail', None),
                     request.json.get('port', None))
@@ -30,7 +27,7 @@ def service_add():
 @admin_required
 def service_delete(id):
     try:
-        delete_service(ServiceRepoImpl(), id)
+        delete_service(id)
     except EmptyField:
         return status.respond({'msg': 'Which service do u wanna delete?'},
                               status.BAD_REQUEST)
@@ -41,8 +38,7 @@ def service_delete(id):
 @admin_required
 def service_modify(id):
     try:
-        modify_service(ServiceRepoImpl(), id,
-                       request.json.get('name', None),
+        modify_service(id, request.json.get('name', None),
                        request.json.get('detail', None),
                        request.json.get('port', None),
                        request.json.get('host_id', None))

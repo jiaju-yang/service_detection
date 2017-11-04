@@ -1,20 +1,21 @@
 from datetime import datetime
 
-from app import db
+from app.repository.sqlalchemy.repos import sqlalchemy
 from app.domain.entities import Admin, Host, Service
 from app.domain.errors import NoAdministratorFound
-from app.repos import tables, AdminRepoImpl, HostRepoImpl, ServiceRepoImpl
+from app.repository.sqlalchemy import AdminRepoImpl, HostRepoImpl, ServiceRepoImpl
+from app.repository.sqlalchemy import tables
 from tests.unit.utils import FlaskAppEnvironmentMixin
 
 
 class DbEnvironmentMixin(FlaskAppEnvironmentMixin):
     def setUp(self):
         super().setUp()
-        tables.drop_all(db.engine)
-        tables.create_all(db.engine)
+        tables.drop_all(sqlalchemy.engine)
+        tables.create_all(sqlalchemy.engine)
 
     def tearDown(self):
-        tables.drop_all(db.engine)
+        tables.drop_all(sqlalchemy.engine)
         super().tearDown()
 
 

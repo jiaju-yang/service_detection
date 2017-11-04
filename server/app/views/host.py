@@ -1,11 +1,10 @@
 from flask import Blueprint, request
 
-from ..permission import admin_required, anonymous_required
-from ..domain.errors import EmptyField
-from ..domain.usecases import add_host, delete_host, list_all_host, modify_host
-from ..repos import HostRepoImpl
-from .. import status
-
+from app.permission import admin_required, anonymous_required
+from app.domain.errors import EmptyField
+from app.domain.usecases import add_host, delete_host, list_all_host, \
+    modify_host
+from app import status
 
 host = Blueprint('host', __name__)
 
@@ -14,8 +13,7 @@ host = Blueprint('host', __name__)
 @admin_required
 def host_add():
     try:
-        add_host(HostRepoImpl(),
-                 request.json.get('name', None),
+        add_host(request.json.get('name', None),
                  request.json.get('detail', None),
                  request.json.get('address', None))
     except EmptyField as e:
@@ -29,7 +27,7 @@ def host_add():
 @admin_required
 def host_delete(id):
     try:
-        delete_host(HostRepoImpl(), id)
+        delete_host(id)
     except EmptyField:
         return status.respond({'msg': 'Which host do u wanna delete?'},
                               status.BAD_REQUEST)
@@ -39,7 +37,7 @@ def host_delete(id):
 @host.route('/', methods=['GET'])
 @anonymous_required
 def host_list_all():
-    hosts = list_all_host(HostRepoImpl())
+    hosts = list_all_host()
     return status.respond([host.to_dict() for host in hosts])
 
 
@@ -47,8 +45,7 @@ def host_list_all():
 @admin_required
 def host_modify(id):
     try:
-        modify_host(HostRepoImpl(), id,
-                    request.json.get('name', None),
+        modify_host(id, request.json.get('name', None),
                     request.json.get('detail', None),
                     request.json.get('address', None))
     except EmptyField as e:

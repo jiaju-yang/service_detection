@@ -53,3 +53,16 @@ class ServiceRepo(metaclass=ABCMeta):
     @abstractmethod
     def modify(self, host_id, service: Service):
         pass
+
+
+class RepoFactory(object):
+    def __init__(self):
+        self.admin, self.host, self.service = None, None, None
+
+    def build(self, admin: AdminRepo, host: HostRepo, service: ServiceRepo):
+        self.admin = admin
+        self.host = host
+        self.service = service
+
+
+repo_factory = RepoFactory()

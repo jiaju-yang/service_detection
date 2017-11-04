@@ -11,9 +11,10 @@ app = create_app(os.getenv('FLASK_CONFIG') or 'default')
 
 @app.cli.command()
 def init():
-    from app import db
-    from app.repos import tables
-    tables.create_all(db.engine)
+    from app import repository
+
+    repository.init(app)
+    click.echo('Initialized app! Database engine: {}.'.format(app.config['DB']))
 
 
 @app.cli.command()
@@ -23,10 +24,9 @@ def init():
 @click.option('--tip', default='')
 def set_admin(username, password, sign, tip):
     from app.domain.usecases import set_admin
-    from app.repos import AdminRepoImpl
 
     try:
-        set_admin(AdminRepoImpl(), username, password, sign, tip)
+        set_admin(username, password, sign, tip)
     except EmptyField as e:
         click.echo('!!!U should set {missed_field} for admin!'.format(missed_field=e.field))
     else:

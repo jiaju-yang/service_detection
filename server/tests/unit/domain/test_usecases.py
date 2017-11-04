@@ -4,12 +4,12 @@ from datetime import datetime, timedelta
 from flask import current_app
 
 from app.domain.entities import Admin, Anonymous
-from app.domain.errors import IncorrectSign, IncorrectUsername, \
-    IncorrectPassword, EmptyField
-from app.domain.usecases import set_admin, get_tip, auth_view_token, \
-    auth_admin_token, get_user_by_token, is_valid_admin, is_valid_anonymous, \
-    add_host, delete_host, list_all_host, modify_host, add_service, \
-    delete_service, modify_service
+from app.domain.errors import (IncorrectSign, IncorrectUsername,
+                               IncorrectPassword, EmptyField)
+from app.domain.usecases import (
+    set_admin, get_tip, auth_view_token, auth_admin_token, get_user_by_token,
+    is_valid_admin, is_valid_anonymous, add_host, delete_host, list_all_host,
+    modify_host, add_service, delete_service, modify_service)
 from app.domain.repos import AdminRepo, HostRepo, ServiceRepo
 from tests.unit.utils import FlaskAppEnvironmentMixin
 
@@ -60,23 +60,24 @@ class MockData(object):
 
 
 class SetAdminTestCase(TestCase):
+    def setUp(self):
+        self.repo = MockRepoFactory.admin()
+
     def test_success_set(self):
         admin_data = {'username': 'test',
                       'sign': 'bullshit',
                       'tip': 'How\'s the code?',
                       'original_password': '123456'}
-        repo = MockRepoFactory.admin()
-        set_admin(repo, **admin_data)
-        repo.set.assert_called_once()
+        set_admin(**admin_data, repo=self.repo)
+        self.repo.set.assert_called_once()
 
     def test_empty_username(self):
         admin_data = {'username': '',
                       'sign': 'bullshit',
                       'tip': 'How\'s the code?',
                       'original_password': '123456'}
-        repo = MockRepoFactory.admin()
         with self.assertRaises(EmptyField) as cm:
-            set_admin(repo, **admin_data)
+            set_admin(**admin_data, repo=self.repo)
         this_exception = cm.exception
         self.assertEqual(this_exception.field, 'username')
 
@@ -85,9 +86,8 @@ class SetAdminTestCase(TestCase):
                       'sign': 'bullshit',
                       'tip': 'How\'s the code?',
                       'original_password': ''}
-        repo = MockRepoFactory.admin()
         with self.assertRaises(EmptyField) as cm:
-            set_admin(repo, **admin_data)
+            set_admin(**admin_data, repo=self.repo)
         this_exception = cm.exception
         self.assertEqual(this_exception.field, 'password')
 
@@ -99,7 +99,7 @@ class GetTipTestCase(TestCase):
         self.repo.get.return_value = Admin(**self.admin_data)
 
     def test_get_tip(self):
-        self.assertEqual(get_tip(self.repo), self.admin_data['tip'])
+        self.assertEqual(get_tip(repo=self.repo), self.admin_data['tip'])
 
 
 class AuthViewTokenTestCase(FlaskAppEnvironmentMixin):
@@ -111,11 +111,11 @@ class AuthViewTokenTestCase(FlaskAppEnvironmentMixin):
 
     def test_success_auth(self):
         self.assertEqual(
-            type(auth_view_token(self.repo, self.admin_data['sign'])), str)
+            type(auth_view_token(self.admin_data['sign'], repo=self.repo)), str)
 
     def test_fail_auth(self):
-        self.assertRaises(IncorrectSign, auth_view_token, self.repo,
-                          'What\'s your name?')
+        self.assertRaises(IncorrectSign, auth_view_token,
+                          'What\'s your name?', repo=self.repo)
 
 
 class AuthAdminTokenTestCase(FlaskAppEnvironmentMixin):
@@ -127,18 +127,18 @@ class AuthAdminTokenTestCase(FlaskAppEnvironmentMixin):
 
     def test_success_auth(self):
         self.assertEqual(
-            type(auth_admin_token(self.repo, self.admin_data['username'],
+            type(auth_admin_token(self.admin_data['username'],
                                   self.admin_data[
-                                      'original_password'])), str)
+                                      'original_password'], repo=self.repo)), str)
 
     def test_incorrect_username_auth(self):
-        self.assertRaises(IncorrectUsername, auth_admin_token, self.repo,
+        self.assertRaises(IncorrectUsername, auth_admin_token,
                           'What\'s your name?', self.admin_data[
-                              'original_password'])
+                              'original_password'], repo=self.repo)
 
     def test_incorrect_password_auth(self):
-        self.assertRaises(IncorrectPassword, auth_admin_token, self.repo,
-                          self.admin_data['username'], '123456xd')
+        self.assertRaises(IncorrectPassword, auth_admin_token,
+                          self.admin_data['username'], '123456xd', repo=self.repo)
 
 
 class GetUserByTokenTestCase(FlaskAppEnvironmentMixin):
@@ -149,21 +149,21 @@ class GetUserByTokenTestCase(FlaskAppEnvironmentMixin):
         self.repo.get.return_value = Admin(**self.admin_data)
 
     def test_invalid_token(self):
-        self.assertIsNone(get_user_by_token(self.repo, None))
-        self.assertIsNone(get_user_by_token(self.repo, ''))
-        self.assertIsNone(get_user_by_token(self.repo, 'abc'))
+        self.assertIsNone(get_user_by_token(None, repo=self.repo))
+        self.assertIsNone(get_user_by_token('', repo=self.repo))
+        self.assertIsNone(get_user_by_token('abc', repo=self.repo))
 
     def test_anonymous_token(self):
         anonymous_data = MockData.anonymous()
         token = Anonymous(**anonymous_data).token()
-        user = get_user_by_token(self.repo, token)
+        user = get_user_by_token(token, repo=self.repo)
         self.assertEqual(user.sign, self.admin_data['sign'])
         self.assertEqual(user.auth_at, anonymous_data['auth_at'])
         self.assertEqual(user.role, Anonymous.role)
 
     def test_admin_token(self):
         token = Admin(**self.admin_data).token()
-        user = get_user_by_token(self.repo, token)
+        user = get_user_by_token(token, repo=self.repo)
         self.assertEqual(user.username, self.admin_data['username'])
         self.assertEqual(user.auth_at, self.admin_data['auth_at'])
         self.assertEqual(user.role, Admin.role)
@@ -207,29 +207,29 @@ class IsValidAnonymousTestCase(FlaskAppEnvironmentMixin):
     def test_valid_anonymous(self):
         anonymous_data = MockData.anonymous()
         user = Anonymous(**anonymous_data)
-        self.assertTrue(is_valid_anonymous(self.repo, user))
+        self.assertTrue(is_valid_anonymous(user, repo=self.repo))
 
     def test_empty_user(self):
-        self.assertFalse(is_valid_anonymous(self.repo, None))
+        self.assertFalse(is_valid_anonymous(None, repo=self.repo))
 
     def test_admin(self):
         admin_data = MockData.admin()
         user = Admin(**admin_data)
-        self.assertFalse(is_valid_anonymous(self.repo, user))
+        self.assertFalse(is_valid_anonymous(user, repo=self.repo))
 
     def test_outdated_anonymous(self):
         anonymous_data = MockData.anonymous()
         anonymous_data['auth_at'] = datetime.now() - timedelta(
             days=current_app.config['AUTH_VALID_PERIOD_IN_DAY'] + 1)
         user = Anonymous(**anonymous_data)
-        self.assertFalse(is_valid_anonymous(self.repo, user))
+        self.assertFalse(is_valid_anonymous(user, repo=self.repo))
 
     def test_updated_admin(self):
         self.repo.get.return_value.updated_at = datetime.now() - timedelta(
             hours=12)
         anonymous_data = MockData.anonymous()
         user = Anonymous(**anonymous_data)
-        self.assertFalse(is_valid_anonymous(self.repo, user))
+        self.assertFalse(is_valid_anonymous(user, repo=self.repo))
 
 
 class AddHostTestCase(TestCase):
@@ -237,18 +237,18 @@ class AddHostTestCase(TestCase):
         self.repo = MockRepoFactory.host()
 
     def test_success_add(self):
-        add_host(self.repo, 'localhost', 'this machine', '127.0.0.1')
+        add_host('localhost', 'this machine', '127.0.0.1', repo=self.repo)
         self.repo.add.assert_called_once()
 
     def test_empty_name(self):
         with self.assertRaises(EmptyField) as cm:
-            add_host(self.repo, '', '', '127.0.0.1')
+            add_host('', '', '127.0.0.1', repo=self.repo)
         this_exception = cm.exception
         self.assertEqual(this_exception.field, 'name')
 
     def test_empty_address(self):
         with self.assertRaises(EmptyField) as cm:
-            add_host(self.repo, 'localhost', '', '')
+            add_host('localhost', '', '', repo=self.repo)
         this_exception = cm.exception
         self.assertEqual(this_exception.field, 'address')
 
@@ -258,12 +258,12 @@ class DeleteHostTestCase(TestCase):
         self.repo = MockRepoFactory.host()
 
     def test_success_delete(self):
-        delete_host(self.repo, 1)
+        delete_host(1, repo=self.repo)
         self.repo.delete.assert_called_once()
 
     def test_empty_id(self):
         with self.assertRaises(EmptyField) as cm:
-            delete_host(self.repo, None)
+            delete_host(None, repo=self.repo)
         this_exception = cm.exception
         self.assertEqual(this_exception.field, 'id')
 
@@ -273,7 +273,7 @@ class ListHostTestCase(TestCase):
         self.repo = MockRepoFactory.host()
 
     def test_success_list(self):
-        list_all_host(self.repo)
+        list_all_host(repo=self.repo)
         self.repo.all.assert_called_once()
 
 
@@ -282,24 +282,24 @@ class ModifyHostTestCase(TestCase):
         self.repo = MockRepoFactory.host()
 
     def test_success_modify(self):
-        modify_host(self.repo, 1, 'localhost', '', '127.0.0.1')
+        modify_host(1, 'localhost', '', '127.0.0.1', repo=self.repo)
         self.repo.modify.assert_called_once()
 
     def test_empty_id(self):
         with self.assertRaises(EmptyField) as cm:
-            modify_host(self.repo, None, 'localhost', '', '127.0.0.1')
+            modify_host(None, 'localhost', '', '127.0.0.1', repo=self.repo)
         this_exception = cm.exception
         self.assertEqual(this_exception.field, 'id')
 
     def test_empty_name(self):
         with self.assertRaises(EmptyField) as cm:
-            modify_host(self.repo, 1, '', '', '127.0.0.1')
+            modify_host(1, '', '', '127.0.0.1', repo=self.repo)
         this_exception = cm.exception
         self.assertEqual(this_exception.field, 'name')
 
     def test_empty_address(self):
         with self.assertRaises(EmptyField) as cm:
-            modify_host(self.repo, 1, 'localhost', '', '')
+            modify_host(1, 'localhost', '', '', repo=self.repo)
         this_exception = cm.exception
         self.assertEqual(this_exception.field, 'address')
 
@@ -309,24 +309,24 @@ class AddServiceTestCase(TestCase):
         self.repo = MockRepoFactory.service()
 
     def test_success_add(self):
-        add_service(self.repo, 1, 'nginx', 'nginx for website', 80)
+        add_service(1, 'nginx', 'nginx for website', 80, repo=self.repo)
         self.repo.add.assert_called_once()
 
     def test_empty_host_id(self):
         with self.assertRaises(EmptyField) as cm:
-            add_service(self.repo, None, 'nginx', 'nginx for website', 80)
+            add_service(None, 'nginx', 'nginx for website', 80, repo=self.repo)
         this_exception = cm.exception
         self.assertEqual(this_exception.field, 'host_id')
 
     def test_empty_name(self):
         with self.assertRaises(EmptyField) as cm:
-            add_service(self.repo, 1, '', 'nginx for website', 80)
+            add_service(1, '', 'nginx for website', 80, repo=self.repo)
         this_exception = cm.exception
         self.assertEqual(this_exception.field, 'name')
 
     def test_empty_port(self):
         with self.assertRaises(EmptyField) as cm:
-            add_service(self.repo, 1, 'nginx', 'nginx for website', None)
+            add_service(1, 'nginx', 'nginx for website', None, repo=self.repo)
         this_exception = cm.exception
         self.assertEqual(this_exception.field, 'port')
 
@@ -336,12 +336,12 @@ class DeleteServiceTestCase(TestCase):
         self.repo = MockRepoFactory.service()
 
     def test_success_delete(self):
-        delete_service(self.repo, 1)
+        delete_service(1, repo=self.repo)
         self.repo.delete.assert_called_once()
 
     def test_empty_id(self):
         with self.assertRaises(EmptyField) as cm:
-            delete_service(self.repo, None)
+            delete_service(None, repo=self.repo)
         this_exception = cm.exception
         self.assertEqual(this_exception.field, 'id')
 
@@ -351,29 +351,29 @@ class ModifyServiceTestCase(TestCase):
         self.repo = MockRepoFactory.service()
 
     def test_success_modify(self):
-        modify_service(self.repo, 1, 'nginx', '', 80, 2)
+        modify_service(1, 'nginx', '', 80, 2, repo=self.repo)
         self.repo.modify.assert_called_once()
 
     def test_empty_id(self):
         with self.assertRaises(EmptyField) as cm:
-            modify_service(self.repo, None, 'nginx', '', 80, 2)
+            modify_service(None, 'nginx', '', 80, 2, repo=self.repo)
         this_exception = cm.exception
         self.assertEqual(this_exception.field, 'id')
 
     def test_empty_name(self):
         with self.assertRaises(EmptyField) as cm:
-            modify_service(self.repo, 1, '', '', 80, 2)
+            modify_service(1, '', '', 80, 2, repo=self.repo)
         this_exception = cm.exception
         self.assertEqual(this_exception.field, 'name')
 
     def test_empty_port(self):
         with self.assertRaises(EmptyField) as cm:
-            modify_service(self.repo, 1, 'nginx', '', None, 2)
+            modify_service(1, 'nginx', '', None, 2, repo=self.repo)
         this_exception = cm.exception
         self.assertEqual(this_exception.field, 'port')
 
     def test_empty_host_id(self):
         with self.assertRaises(EmptyField) as cm:
-            modify_service(self.repo, 1, 'nginx', '', 80, None)
+            modify_service(1, 'nginx', '', 80, None, repo=self.repo)
         this_exception = cm.exception
         self.assertEqual(this_exception.field, 'host_id')

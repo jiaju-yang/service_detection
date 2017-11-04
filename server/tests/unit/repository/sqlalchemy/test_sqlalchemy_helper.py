@@ -2,7 +2,7 @@ from abc import ABCMeta, abstractmethod
 from unittest import TestCase
 from sqlalchemy import create_engine, Table, Column, Integer, String, MetaData
 
-from app.repos import choose_columns
+from app.repository.sqlalchemy.sqlalchemy_helper import choose_columns
 
 
 class MockDbEnvironmentTestCase(TestCase, metaclass=ABCMeta):

@@ -1,9 +1,9 @@
 from flask import request
 
-from ..domain.errors import NoAdministratorFound, SDException
-from ..repos import AdminRepoImpl
-from ..domain.usecases import get_user_by_token
-from .. import status
+from app.domain.errors import NoAdministratorFound, SDException
+from app.domain.usecases import get_user_by_token
+from app import status
+
 from .auth import auth
 from .host import host
 from .service import service
@@ -24,7 +24,7 @@ def register(app):
     @app.before_request
     def parse_token():
         token = request.headers.get('token', None)
-        user = get_user_by_token(AdminRepoImpl(), token)
+        user = get_user_by_token(token)
         request.user = user
 
     app.register_blueprint(auth, url_prefix='/auth')

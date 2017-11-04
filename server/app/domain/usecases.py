@@ -1,6 +1,6 @@
 from jwt import DecodeError
 
-from .repos import AdminRepo, HostRepo, ServiceRepo
+from .repos import repo_factory
 from .utils import decrypt_with_jwt, now, datetime_from_str
 from .entities import Anonymous, Admin, Host, Service
 from .errors import IncorrectSign, IncorrectUsername, IncorrectPassword, \
@@ -13,19 +13,19 @@ def _fields_required(fields, *keys):
             raise EmptyField(key)
 
 
-def set_admin(repo: AdminRepo, username, original_password, sign=None,
-              tip=None):
+def set_admin(username, original_password, sign=None,
+              tip=None, *, repo=repo_factory.admin):
     admin = Admin(username, now(), sign, tip,
                   original_password=original_password)
     repo.set(admin)
 
 
-def get_tip(repo: AdminRepo):
+def get_tip(*, repo=repo_factory.admin):
     admin = repo.get()
     return admin.tip
 
 
-def auth_view_token(repo: AdminRepo, sign):
+def auth_view_token(sign, *, repo=repo_factory.admin):
     admin = repo.get()
     if not admin.is_sign_correct(sign):
         raise IncorrectSign()
@@ -33,7 +33,7 @@ def auth_view_token(repo: AdminRepo, sign):
     return user.token()
 
 
-def auth_admin_token(repo: AdminRepo, username, password):
+def auth_admin_token(username, password, *, repo=repo_factory.admin):
     admin = repo.get()
     if not admin.is_username_correct(username):
         raise IncorrectUsername()
@@ -43,7 +43,7 @@ def auth_admin_token(repo: AdminRepo, username, password):
     return admin.token()
 
 
-def get_user_by_token(repo: AdminRepo, token):
+def get_user_by_token(token, *, repo=repo_factory.admin):
     if not token:
         return None
     try:
@@ -65,44 +65,44 @@ def is_valid_admin(user):
     return user and user.role == Admin.role and user.is_auth_valid()
 
 
-def is_valid_anonymous(repo: AdminRepo, user):
+def is_valid_anonymous(user, *, repo=repo_factory.admin):
     return user and user.role == Anonymous.role and user.is_auth_valid(
         repo.get())
 
 
-def add_host(repo: HostRepo, name, detail, address):
+def add_host(name, detail, address, *, repo=repo_factory.host):
     _fields_required(locals(), 'name', 'address')
     host = Host(name, detail, address)
     repo.add(host)
 
 
-def delete_host(repo: HostRepo, id):
+def delete_host(id, *, repo=repo_factory.host):
     _fields_required(locals(), 'id')
     repo.delete(id)
 
 
-def list_all_host(repo: HostRepo):
+def list_all_host(*, repo=repo_factory.host):
     return repo.all()
 
 
-def modify_host(repo: HostRepo, id, name, detail, address):
+def modify_host(id, name, detail, address, *, repo=repo_factory.host):
     _fields_required(locals(), 'id', 'name', 'address')
     host = Host(name, detail, address, id=id)
     repo.modify(host)
 
 
-def add_service(repo: ServiceRepo, host_id, name, detail, port):
+def add_service(host_id, name, detail, port, *, repo=repo_factory.service):
     _fields_required(locals(), 'host_id', 'name', 'port')
     service = Service(name, detail, port)
     repo.add(host_id, service)
 
 
-def delete_service(repo: ServiceRepo, id):
+def delete_service(id, *, repo=repo_factory.service):
     _fields_required(locals(), 'id')
     repo.delete(id)
 
 
-def modify_service(repo: ServiceRepo, id, name, detail, port, host_id):
+def modify_service(id, name, detail, port, host_id, *, repo=repo_factory.service):
     _fields_required(locals(), 'id', 'name', 'port', 'host_id')
     service = Service(name, detail, port, id=id)
     repo.modify(host_id, service)
