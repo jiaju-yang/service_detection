@@ -1,18 +1,16 @@
 from flask import request
+from flask_restplus import Api
 
 from app.domain.errors import NoAdministratorFound, SDException
 from app.domain.usecases import get_user_by_token
 
-from . import status
-from .auth import auth
-from .host import host
-from .service import service
+from . import status, restful_helper, host, auth, service
 
 
 def register(app):
     @app.errorhandler(404)
     def not_found(error):
-        return status.respond({'msg': 'Not found url.'}, status.NOT_FOUND)
+        return status.respond({'msg': 'Url not found.'}, status.NOT_FOUND)
 
     @app.errorhandler(SDException)
     def handle_error(e):
@@ -27,6 +25,8 @@ def register(app):
         user = get_user_by_token(token)
         request.user = user
 
-    app.register_blueprint(auth, url_prefix='/auth')
-    app.register_blueprint(host, url_prefix='/host')
-    app.register_blueprint(service, url_prefix='/service')
+    api = Api()
+    api.add_namespace(auth.api)
+    api.add_namespace(host.api)
+    api.add_namespace(service.api)
+    api.init_app(app)

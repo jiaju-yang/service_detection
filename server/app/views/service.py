@@ -1,54 +1,48 @@
-from flask import Blueprint, request
+from flask_restplus import Resource, Namespace
 
 from app.domain.errors import EmptyField
 from app.domain.usecases import add_service, modify_service, delete_service
 
 from . import status
 from .permission import admin_required
+from .restful_helper import parse_argument
 
-service = Blueprint('service', __name__)
-
-
-@service.route('', methods=['POST'])
-@admin_required
-def service_add():
-    try:
-        add_service(request.json.get('host_id', None),
-                    request.json.get('name', None),
-                    request.json.get('detail', None),
-                    request.json.get('port', None))
-    except EmptyField as e:
-        return status.respond(
-            {'msg': 'Required field: {field}'.format(field=e.field)},
-            status.BAD_REQUEST)
-    return status.respond(status=status.CREATED)
+api = Namespace('service')
 
 
-@service.route('/<int:id>', methods=['DELETE'])
-@admin_required
-def service_delete(id):
-    try:
-        delete_service(id)
-    except EmptyField:
-        return status.respond({'msg': 'Which service do u wanna delete?'},
-                              status.BAD_REQUEST)
-    return status.respond(status=status.SUCCESS)
-
-
-@service.route('/<int:id>', methods=['PUT'])
-@admin_required
-def service_modify(id):
-    try:
-        modify_service(id, request.json.get('name', None),
-                       request.json.get('detail', None),
-                       request.json.get('port', None),
-                       request.json.get('host_id', None))
-    except EmptyField as e:
-        if e.field == 'id':
-            return status.respond({'msg': 'Which host do u wanna modify?'},
-                                  status.BAD_REQUEST)
-        else:
+@api.route('', '/<int:id>')
+class Service(Resource):
+    @admin_required
+    def post(self):
+        args = parse_argument('host_id', 'name', 'detail', 'port')
+        try:
+            add_service(**args)
+        except EmptyField as e:
             return status.respond(
                 {'msg': 'Required field: {field}'.format(field=e.field)},
                 status.BAD_REQUEST)
-    return status.respond()
+        return status.respond(status=status.CREATED)
+
+    @admin_required
+    def delete(self, id):
+        try:
+            delete_service(id)
+        except EmptyField:
+            return status.respond({'msg': 'Which service do u wanna delete?'},
+                                  status.BAD_REQUEST)
+        return status.respond(status=status.SUCCESS)
+
+    @admin_required
+    def put(self, id):
+        args = parse_argument('host_id', 'name', 'detail', 'port')
+        try:
+            modify_service(id, **args)
+        except EmptyField as e:
+            if e.field == 'id':
+                return status.respond({'msg': 'Which host do u wanna modify?'},
+                                      status.BAD_REQUEST)
+            else:
+                return status.respond(
+                    {'msg': 'Required field: {field}'.format(field=e.field)},
+                    status.BAD_REQUEST)
+        return status.respond()
