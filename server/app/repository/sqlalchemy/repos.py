@@ -1,4 +1,5 @@
-from sqlalchemy.orm import joinedload
+from itertools import groupby
+from sqlalchemy import join
 from sqlalchemy.sql import select, update, insert, delete
 from flask_sqlalchemy import SQLAlchemy
 
@@ -55,10 +56,29 @@ class HostRepoImpl(HostRepo):
             conn.execute(delete(hosts).where(hosts.c.id == id))
 
     def all(self):
-        session = sqlalchemy.session
-        host_entities = session.query(Host).options(joinedload('services')).all()
-        session.commit()
-        return host_entities
+        with sqlalchemy.engine.connect() as conn:
+            result = conn.execute(select(choose_columns(hosts, ('id', 'id'),
+                                                        ('name', 'name'),
+                                                        ('address', 'address'),
+                                                        ('detail',
+                                                         'detail')) + choose_columns(
+                services, ('id', 'service.id'), ('name', 'service.name'),
+                ('detail', 'service.detail'), ('port', 'service.port'),
+                ('host_id', 'host_id'))).select_from(
+                join(hosts, services, hosts.c.id == services.c.host_id,
+                     isouter=True)))
+            host_models = []
+            for host_data, services_data in groupby(
+                    result, key=lambda row: {key: row[key] for key in (
+                            'id', 'name', 'address', 'detail')}):
+                service_models = [Service(service_data['service.name'],
+                                          service_data['service.detail'],
+                                          service_data['service.port'],
+                                          service_data['service.id']) for
+                                  service_data in
+                                  services_data if service_data['service.id']]
+                host_models.append(Host(**host_data, services=service_models))
+            return host_models
 
     def modify(self, host: Host):
         with sqlalchemy.engine.connect() as conn:

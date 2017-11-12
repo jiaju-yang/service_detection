@@ -7,12 +7,6 @@ class DomainModel(object):
     pass
 
 
-def _fields_required(fields, *keys):
-    for key in keys:
-        if not fields[key]:
-            raise EmptyField(key)
-
-
 class ToDictMixin(object):
     _dict_fields = tuple()
 
@@ -47,7 +41,6 @@ class Admin(DomainModel):
 
     def __init__(self, username, updated_at, sign=None, tip=None, auth_at=None,
                  *, original_password=None, encrypted_password=None):
-        _fields_required(locals(), 'username', 'updated_at')
         self.username = username
         self.updated_at = updated_at
         self.sign = sign
@@ -57,6 +50,26 @@ class Admin(DomainModel):
         self.password = encrypted_password or encrypt_irreversibly(
             original_password)
         self.auth_at = auth_at
+
+    @property
+    def username(self):
+        return self._username
+
+    @username.setter
+    def username(self, username):
+        if not username:
+            raise EmptyField('username')
+        self._username = username
+
+    @property
+    def updated_at(self):
+        return self._updated_at
+
+    @updated_at.setter
+    def updated_at(self, updated_at):
+        if not updated_at:
+            raise EmptyField('updated_at')
+        self._updated_at = updated_at
 
     def is_username_correct(self, username):
         return username == self.username
@@ -110,6 +123,26 @@ class Host(DomainModel, ToDictMixin):
             self.services.extend(services)
         self.id = id
 
+    @property
+    def name(self):
+        return self._name
+
+    @name.setter
+    def name(self, name):
+        if not name:
+            raise EmptyField('name')
+        self._name = name
+
+    @property
+    def address(self):
+        return self._address
+
+    @address.setter
+    def address(self, address):
+        if not address:
+            raise EmptyField('address')
+        self._address = address
+
 
 class Service(DomainModel, ToDictMixin):
     _dict_fields = ('id', 'name', 'detail', 'port')
@@ -119,3 +152,23 @@ class Service(DomainModel, ToDictMixin):
         self.detail = detail
         self.port = port
         self.id = id
+
+    @property
+    def name(self):
+        return self._name
+
+    @name.setter
+    def name(self, name):
+        if not name:
+            raise EmptyField('name')
+        self._name = name
+
+    @property
+    def port(self):
+        return self._port
+
+    @port.setter
+    def port(self, port):
+        if not port:
+            raise EmptyField('port')
+        self._port = port

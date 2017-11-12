@@ -71,7 +71,6 @@ def is_valid_anonymous(user):
 
 
 def add_host(name, detail, address):
-    _fields_required(locals(), 'name', 'address')
     host = Host(name, detail, address)
     repos.host.add(host)
 
@@ -86,13 +85,13 @@ def list_all_host():
 
 
 def modify_host(id, name, detail, address):
-    _fields_required(locals(), 'id', 'name', 'address')
+    _fields_required(locals(), 'id')
     host = Host(name, detail, address, id=id)
     repos.host.modify(host)
 
 
 def add_service(host_id, name, detail, port):
-    _fields_required(locals(), 'host_id', 'name', 'port')
+    _fields_required(locals(), 'host_id')
     service = Service(name, detail, port)
     repos.service.add(host_id, service)
 
@@ -103,6 +102,6 @@ def delete_service(id):
 
 
 def modify_service(id, name, detail, port, host_id):
-    _fields_required(locals(), 'id', 'name', 'port', 'host_id')
+    _fields_required(locals(), 'id', 'host_id')
     service = Service(name, detail, port, id=id)
     repos.service.modify(host_id, service)
