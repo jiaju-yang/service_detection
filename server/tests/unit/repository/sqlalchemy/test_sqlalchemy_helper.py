@@ -1,46 +1,35 @@
-from abc import ABCMeta, abstractmethod
-from unittest import TestCase
 from sqlalchemy import create_engine, Table, Column, Integer, String, MetaData
+import pytest
 
 from app.repository.sqlalchemy.sqlalchemy_helper import choose_columns
 
 
-class MockDbEnvironmentTestCase(TestCase, metaclass=ABCMeta):
-    @abstractmethod
-    def mock_tables(self, metadata):
-        pass
+class TestChooseColumns(object):
+    @pytest.fixture
+    def table(self):
+        metadata = MetaData()
+        table = Table('table1', metadata,
+                      Column('field1', Integer, primary_key=True),
+                      Column('field2', String(50), nullable=False))
+        engine = create_engine('sqlite:///:memory:')
+        metadata.create_all(engine)
+        yield table
+        metadata.drop_all(engine)
 
-    def setUp(self):
-        self.metadata = MetaData()
-        for table_name, table in self.mock_tables(self.metadata).items():
-            setattr(self, table_name, table)
-        self.engine = create_engine('sqlite:///:memory:')
-        self.metadata.create_all(self.engine)
+    def test_choose_one_column(self, table):
+        columns = choose_columns(table, 'field1')
+        assert len(columns) == 1
+        assert isinstance(columns[0], Column)
+        assert columns[0].name == 'field1'
 
-    def tearDown(self):
-        self.metadata.drop_all(self.engine)
+    def test_choose_multiple_columns(self, table):
+        columns = choose_columns(table, 'field1', 'field2')
+        assert len(columns) == 2
+        assert columns[0].name == 'field1'
+        assert columns[1].name == 'field2'
 
-
-class ColumnChooserTestCase(MockDbEnvironmentTestCase):
-    def mock_tables(self, metadata):
-        return {'table1': Table('table1', metadata,
-                                Column('field1', Integer, primary_key=True),
-                                Column('field2', String(50), nullable=False))}
-
-    def test_choose_one_column(self):
-        columns = choose_columns(self.table1, 'field1')
-        self.assertEqual(len(columns), 1)
-        self.assertTrue(isinstance(columns[0], Column))
-        self.assertEqual(columns[0].name, 'field1')
-
-    def test_choose_multiple_columns(self):
-        columns = choose_columns(self.table1, 'field1', 'field2')
-        self.assertEqual(len(columns), 2)
-        self.assertEqual(columns[0].name, 'field1')
-        self.assertEqual(columns[1].name, 'field2')
-
-    def test_alias_column(self):
-        columns = choose_columns(self.table1, ('field1', 'alias1'),
+    def test_alias_column(self, table):
+        columns = choose_columns(table, ('field1', 'alias1'),
                                  ('field2', 'alias2'))
-        self.assertEqual(columns[0].name, 'alias1')
-        self.assertEqual(columns[1].name, 'alias2')
+        assert columns[0].name == 'alias1'
+        assert columns[1].name == 'alias2'

@@ -1,13 +1,17 @@
-from unittest import TestCase
+import pytest
 
 from app import create_app
 
 
-class FlaskAppEnvironmentMixin(TestCase):
-    def setUp(self):
-        self.app = create_app('testing')
-        self.app_context = self.app.app_context()
-        self.app_context.push()
+class FlaskAppEnvironment(object):
+    @pytest.fixture(scope='class')
+    def app(self):
+        return create_app('testing')
 
-    def tearDown(self):
-        self.app_context.pop()
+
+class FlaskAppContextEnvironment(FlaskAppEnvironment):
+    @pytest.fixture
+    def app_context(self, app):
+        app_context = app.app_context()
+        yield app_context.push()
+        app_context.pop()
