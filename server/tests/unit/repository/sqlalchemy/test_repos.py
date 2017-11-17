@@ -4,8 +4,8 @@ import pytest
 from app.repository.sqlalchemy.repos import sqlalchemy
 from app.domain.entities import Admin, Host, Service
 from app.domain.errors import NoAdministratorFound
-from app.repository.sqlalchemy import (AdminRepoImpl, HostRepoImpl,
-                                       ServiceRepoImpl)
+from app.repository.sqlalchemy import (SqlalchemyAdminRepo, SqlalchemyHostRepo,
+                                       SqlalchemyServiceRepo)
 from app.repository.sqlalchemy import tables
 from tests.unit.utils import FlaskAppContextEnvironment
 
@@ -21,7 +21,7 @@ class DbEnvironment(FlaskAppContextEnvironment):
 class TestAdminRepoImpl(DbEnvironment):
     @pytest.fixture(scope='class')
     def repo(self):
-        return AdminRepoImpl()
+        return SqlalchemyAdminRepo()
 
     @pytest.fixture
     def admin1_data(self):
@@ -61,21 +61,29 @@ class TestAdminRepoImpl(DbEnvironment):
 class TestHostRepoImpl(DbEnvironment):
     @pytest.fixture(scope='class')
     def repo(self):
-        return HostRepoImpl()
+        return SqlalchemyHostRepo()
 
     @pytest.fixture
     def host1_data(self):
-        return {'name': 'localhost', 'detail': 'this machine',
+        return {'id': 'fake_id1', 'name': 'localhost', 'detail': 'this machine',
                 'address': '127.0.0.1'}
 
     @pytest.fixture
     def host2_data(self):
-        return {'name': 'server1', 'detail': 'remote machine 1',
+        return {'id': 'fake_id2', 'name': 'server1',
+                'detail': 'remote machine 1',
                 'address': '8.8.8.8'}
+
+    def test_next_identity(self, repo):
+        new_id = repo.next_identity()
+        assert type(new_id) is str
+
+        next_new_id = repo.next_identity()
+        assert new_id != next_new_id
 
     def test_one_host_persistence(self, table, repo, host1_data, host2_data):
         host = Host(**host1_data)
-        repo.add(host)
+        repo.save(host)
         hosts_from_persistence = repo.all()
         assert len(hosts_from_persistence) == 1
 
@@ -87,7 +95,7 @@ class TestHostRepoImpl(DbEnvironment):
                                        host2_data):
         hosts = [Host(**host1_data), Host(**host2_data)]
         for host in hosts:
-            repo.add(host)
+            repo.save(host)
         hosts_from_persistence = repo.all()
         assert len(hosts) == 2
 
@@ -96,20 +104,27 @@ class TestHostRepoImpl(DbEnvironment):
                 assert getattr(host, key) == getattr(host_from_persistence, key)
 
     def test_modify(self, table, repo, host1_data, host2_data):
-        host1 = Host(**host1_data)
-        host2 = Host(**host2_data)
-        host2.id = 1
-        repo.add(host1)
-        repo.modify(host2)
+        host = Host(**host1_data)
+        repo.save(host)
         hosts_from_persistence = repo.all()
         assert len(hosts_from_persistence) == 1
+
+        host.name, host.detail, host.address = host2_data['name'], host2_data[
+            'detail'], host2_data['address']
+        repo.save(host)
+        hosts_from_persistence = repo.all()
+        assert len(hosts_from_persistence) == 1
+
         host_from_persistence = hosts_from_persistence[0]
-        for key in (list(host1_data.keys()) + ['id']):
-            assert getattr(host2, key) == getattr(host_from_persistence, key)
+        for key in host2_data.keys():
+            if key == 'id':
+                assert host1_data['id'] == host_from_persistence.id
+            else:
+                assert host2_data[key] == getattr(host_from_persistence, key)
 
     def test_delete(self, table, repo, host1_data):
         host = Host(**host1_data)
-        repo.add(host)
+        repo.save(host)
         repo.delete(repo.all()[0].id)
         assert len(repo.all()) == 0
 
@@ -117,15 +132,15 @@ class TestHostRepoImpl(DbEnvironment):
 class TestServiceRepoImpl(DbEnvironment):
     @pytest.fixture(scope='class')
     def host_repo(self):
-        return HostRepoImpl()
+        return SqlalchemyHostRepo()
 
     @pytest.fixture(scope='class')
     def service_repo(self):
-        return ServiceRepoImpl()
+        return SqlalchemyServiceRepo()
 
     @pytest.fixture
     def host_data(self):
-        return {'name': 'localhost', 'detail': 'this machine',
+        return {'id': 'fake_id', 'name': 'localhost', 'detail': 'this machine',
                 'address': '127.0.0.1'}
 
     @pytest.fixture
@@ -138,7 +153,7 @@ class TestServiceRepoImpl(DbEnvironment):
 
     def test_service_persistence(self, table, host_repo, service_repo,
                                  host_data, service1_data, service2_data):
-        host_repo.add(Host(**host_data))
+        host_repo.save(Host(**host_data))
         host_from_persistence = host_repo.all()[0]
         service1 = Service(**service1_data)
         service2 = Service(**service2_data)
@@ -161,7 +176,7 @@ class TestServiceRepoImpl(DbEnvironment):
 
     def test_modify(self, table, host_repo, service_repo,
                     host_data, service1_data, service2_data):
-        host_repo.add(Host(**host_data))
+        host_repo.save(Host(**host_data))
         host_from_persistence = host_repo.all()[0]
         service = Service(**service1_data)
         service_repo.add(host_from_persistence.id, service)
@@ -180,7 +195,7 @@ class TestServiceRepoImpl(DbEnvironment):
 
     def test_delete(self, table, host_repo, service_repo,
                     host_data, service1_data, service2_data):
-        host_repo.add(Host(**host_data))
+        host_repo.save(Host(**host_data))
         service = Service(**service1_data)
         service_repo.add(host_repo.all()[0].id, service)
         service_id = host_repo.all()[0].services[0].id

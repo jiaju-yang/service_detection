@@ -43,10 +43,10 @@ def admin_repo():
 @pytest.fixture
 def host_repo():
     repo = Mock()
-    repo.add = Mock()
+    repo.next_identity = Mock()
+    repo.save = Mock()
     repo.delete = Mock()
     repo.all = Mock()
-    repo.modify = Mock()
     domain.inject_repos(host=repo)
     return repo
 
@@ -191,10 +191,10 @@ class TestIsValidAnonymous(FlaskAppContextEnvironment):
         assert not is_valid_anonymous(user)
 
 
-class TestAddHost(object):
-    def test_success_add(self, host_repo):
+class TestSaveHost(object):
+    def test_success_save(self, host_repo):
         add_host('localhost', 'this machine', '127.0.0.1')
-        host_repo.add.assert_called_once()
+        host_repo.save.assert_called_once()
 
     @pytest.mark.parametrize(
         'host_data, expected',
@@ -226,7 +226,7 @@ def test_list_host(host_repo):
 class TestModifyHost(object):
     def test_success_modify(self, host_repo):
         modify_host(1, 'localhost', '', '127.0.0.1')
-        host_repo.modify.assert_called_once()
+        host_repo.save.assert_called_once()
 
     @pytest.mark.parametrize(
         'host_data, expected',

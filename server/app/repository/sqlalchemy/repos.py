@@ -2,6 +2,7 @@ from itertools import groupby
 from sqlalchemy import join
 from sqlalchemy.sql import select, update, insert, delete
 from flask_sqlalchemy import SQLAlchemy
+from uuid import uuid4
 
 from app.domain.entities import Admin, Host, Service
 from app.domain.errors import NoAdministratorFound
@@ -13,7 +14,7 @@ from .tables import admins, hosts, services
 sqlalchemy = SQLAlchemy()
 
 
-class AdminRepoImpl(AdminRepo):
+class SqlalchemyAdminRepo(AdminRepo):
     def get(self):
         with sqlalchemy.engine.connect() as conn:
             admin_data = conn.execute(
@@ -44,12 +45,26 @@ class AdminRepoImpl(AdminRepo):
                                                    tip=admin.tip))
 
 
-class HostRepoImpl(HostRepo):
-    def add(self, host: Host):
+class SqlalchemyHostRepo(HostRepo):
+    def next_identity(self):
+        return 'HOST_' + str(uuid4())
+
+    def save(self, host: Host):
         with sqlalchemy.engine.connect() as conn:
-            conn.execute(
-                insert(hosts).values(name=host.name, detail=host.detail,
-                                     address=host.address))
+            exist_host = conn.execute(
+                select([hosts.c.id]).where(hosts.c.id == host.id)).first()
+            if exist_host:
+                conn.execute(
+                    update(hosts).where(
+                        hosts.c.id == host.id).values(id=host.id,
+                                                      name=host.name,
+                                                      detail=host.detail,
+                                                      address=host.address))
+            else:
+                conn.execute(
+                    insert(hosts).values(id=host.id, name=host.name,
+                                         detail=host.detail,
+                                         address=host.address))
 
     def delete(self, id):
         with sqlalchemy.engine.connect() as conn:
@@ -80,15 +95,8 @@ class HostRepoImpl(HostRepo):
                 host_models.append(Host(**host_data, services=service_models))
             return host_models
 
-    def modify(self, host: Host):
-        with sqlalchemy.engine.connect() as conn:
-            conn.execute(update(hosts).where(
-                hosts.c.id == host.id).values(
-                name=host.name, detail=host.detail,
-                address=host.address))
 
-
-class ServiceRepoImpl(ServiceRepo):
+class SqlalchemyServiceRepo(ServiceRepo):
     def add(self, host_id, service: Service):
         with sqlalchemy.engine.connect() as conn:
             conn.execute(

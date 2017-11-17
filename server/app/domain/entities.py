@@ -1,9 +1,15 @@
+from typing import NamedTuple
+
 from .utils import encrypt_irreversibly, encrypt_with_jwt, datetime_from_str, \
     datetime_to_str, is_auth_time_valid
 from .errors import EmptyField
 
 
-class DomainModel(object):
+class Entity(object):
+    pass
+
+
+class ValueObject(NamedTuple):
     pass
 
 
@@ -36,7 +42,7 @@ class ToDictMixin(object):
             return value
 
 
-class Admin(DomainModel):
+class Admin(Entity):
     role = 'admin'
 
     def __init__(self, username, updated_at, sign=None, tip=None, auth_at=None,
@@ -89,7 +95,7 @@ class Admin(DomainModel):
             {'role': self.role, 'auth_at': datetime_to_str(self.auth_at)})
 
 
-class Anonymous(DomainModel):
+class Anonymous(Entity):
     role = 'anonymous'
 
     def __init__(self, sign, auth_at):
@@ -111,10 +117,10 @@ class Anonymous(DomainModel):
              'auth_at': datetime_to_str(self.auth_at)})
 
 
-class Host(DomainModel, ToDictMixin):
+class Host(Entity, ToDictMixin):
     _dict_fields = ('id', 'name', 'detail', 'address', 'services')
 
-    def __init__(self, name, detail, address, services=None, id=None):
+    def __init__(self, id, name, detail, address, services=None):
         self.name = name
         self.detail = detail
         self.address = address
@@ -144,7 +150,7 @@ class Host(DomainModel, ToDictMixin):
         self._address = address
 
 
-class Service(DomainModel, ToDictMixin):
+class Service(Entity, ToDictMixin):
     _dict_fields = ('id', 'name', 'detail', 'port')
 
     def __init__(self, name, detail, port, id=None):

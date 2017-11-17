@@ -12,7 +12,7 @@ admins = Table('admins', _metadata,
                Column('updated_at', DateTime))
 
 hosts = Table('hosts', _metadata,
-              Column('id', Integer, primary_key=True),
+              Column('id', String(50), primary_key=True),
               Column('name', String(50), nullable=False),
               Column('detail', Text),
               Column('address', Text, nullable=False))

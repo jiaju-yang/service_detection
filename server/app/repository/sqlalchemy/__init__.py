@@ -1,4 +1,4 @@
-from .repos import sqlalchemy, AdminRepoImpl, HostRepoImpl, ServiceRepoImpl
+from .repos import sqlalchemy, SqlalchemyAdminRepo, SqlalchemyHostRepo, SqlalchemyServiceRepo
 from . import tables
 
 
@@ -6,9 +6,9 @@ def get_repos(app):
     sqlalchemy.init_app(app)
 
     return {
-        'admin': AdminRepoImpl(),
-        'host': HostRepoImpl(),
-        'service': ServiceRepoImpl(),
+        'admin': SqlalchemyAdminRepo(),
+        'host': SqlalchemyHostRepo(),
+        'service': SqlalchemyServiceRepo(),
     }
 
 

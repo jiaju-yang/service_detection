@@ -20,7 +20,11 @@ class AdminRepo(metaclass=ABCMeta):
 
 class HostRepo(metaclass=ABCMeta):
     @abstractmethod
-    def add(self, host: Host):
+    def next_identity(self):
+        pass
+
+    @abstractmethod
+    def save(self, host: Host):
         pass
 
     @abstractmethod
@@ -34,10 +38,6 @@ class HostRepo(metaclass=ABCMeta):
         :return:
         :rtype: list of Host
         """
-        pass
-
-    @abstractmethod
-    def modify(self, host: Host):
         pass
 
 
