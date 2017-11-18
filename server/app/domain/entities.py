@@ -121,13 +121,23 @@ class Host(Entity, ToDictMixin):
     _dict_fields = ('id', 'name', 'detail', 'address', 'services')
 
     def __init__(self, id, name, detail, address, services=None):
+        self.id = id
         self.name = name
         self.detail = detail
         self.address = address
         self.services = []
         if services:
             self.services.extend(services)
-        self.id = id
+
+    @property
+    def id(self):
+        return self._id
+
+    @id.setter
+    def id(self, id):
+        if not id:
+            raise EmptyField('id')
+        self._id = id
 
     @property
     def name(self):
@@ -153,11 +163,21 @@ class Host(Entity, ToDictMixin):
 class Service(Entity, ToDictMixin):
     _dict_fields = ('id', 'name', 'detail', 'port')
 
-    def __init__(self, name, detail, port, id=None):
+    def __init__(self, id, name, detail, port):
+        self.id = id
         self.name = name
         self.detail = detail
         self.port = port
-        self.id = id
+
+    @property
+    def id(self):
+        return self._id
+
+    @id.setter
+    def id(self, id):
+        if not id:
+            raise EmptyField('id')
+        self._id = id
 
     @property
     def name(self):

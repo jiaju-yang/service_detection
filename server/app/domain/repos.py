@@ -43,15 +43,15 @@ class HostRepo(metaclass=ABCMeta):
 
 class ServiceRepo(metaclass=ABCMeta):
     @abstractmethod
-    def add(self, host_id, service: Service):
+    def next_identity(self):
+        pass
+
+    @abstractmethod
+    def save(self, host_id, service: Service):
         pass
 
     @abstractmethod
     def delete(self, id):
-        pass
-
-    @abstractmethod
-    def modify(self, host_id, service: Service):
         pass
 
 

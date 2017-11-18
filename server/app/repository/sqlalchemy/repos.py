@@ -86,10 +86,10 @@ class SqlalchemyHostRepo(HostRepo):
             for host_data, services_data in groupby(
                     result, key=lambda row: {key: row[key] for key in (
                             'id', 'name', 'address', 'detail')}):
-                service_models = [Service(service_data['service.name'],
+                service_models = [Service(service_data['service.id'],
+                                          service_data['service.name'],
                                           service_data['service.detail'],
-                                          service_data['service.port'],
-                                          service_data['service.id']) for
+                                          service_data['service.port']) for
                                   service_data in
                                   services_data if service_data['service.id']]
                 host_models.append(Host(**host_data, services=service_models))
@@ -97,20 +97,26 @@ class SqlalchemyHostRepo(HostRepo):
 
 
 class SqlalchemyServiceRepo(ServiceRepo):
-    def add(self, host_id, service: Service):
+    def next_identity(self):
+        return 'SERVICE_' + str(uuid4())
+
+    def save(self, host_id, service: Service):
         with sqlalchemy.engine.connect() as conn:
-            conn.execute(
-                insert(services).values(
-                    name=service.name, detail=service.detail,
-                    port=service.port, host_id=host_id))
+            exist_service = conn.execute(
+                select([services.c.id]).where(
+                    services.c.id == service.id)).first()
+            if exist_service:
+                conn.execute(
+                    update(services).where(
+                        services.c.id == service.id).values(
+                        id=service.id, name=service.name, detail=service.detail,
+                        port=service.port, host_id=host_id))
+            else:
+                conn.execute(
+                    insert(services).values(
+                        id=service.id, name=service.name, detail=service.detail,
+                        port=service.port, host_id=host_id))
 
     def delete(self, id):
         with sqlalchemy.engine.connect() as conn:
             conn.execute(delete(services).where(services.c.id == id))
-
-    def modify(self, host_id, service: Service):
-        with sqlalchemy.engine.connect() as conn:
-            conn.execute(update(services).where(
-                services.c.id == service.id).values(
-                name=service.name, detail=service.detail,
-                port=service.port, host_id=host_id))

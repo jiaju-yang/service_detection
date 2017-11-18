@@ -77,7 +77,8 @@ def add_host(name, detail, address):
 
 
 def delete_host(id):
-    _fields_required(locals(), 'id')
+    if not id:
+        raise EmptyField('id')
     repos.host.delete(id)
 
 
@@ -86,23 +87,24 @@ def list_all_host():
 
 
 def modify_host(id, name, detail, address):
-    _fields_required(locals(), 'id')
     host = Host(id, name, detail, address)
     repos.host.save(host)
 
 
 def add_service(host_id, name, detail, port):
     _fields_required(locals(), 'host_id')
-    service = Service(name, detail, port)
-    repos.service.add(host_id, service)
+    id = repos.service.next_identity()
+    service = Service(id, name, detail, port)
+    repos.service.save(host_id, service)
 
 
 def delete_service(id):
-    _fields_required(locals(), 'id')
+    if not id:
+        raise EmptyField('id')
     repos.service.delete(id)
 
 
 def modify_service(id, name, detail, port, host_id):
-    _fields_required(locals(), 'id', 'host_id')
-    service = Service(name, detail, port, id=id)
-    repos.service.modify(host_id, service)
+    _fields_required(locals(), 'host_id')
+    service = Service(id, name, detail, port)
+    repos.service.save(host_id, service)

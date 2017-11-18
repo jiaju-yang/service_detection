@@ -145,11 +145,20 @@ class TestServiceRepoImpl(DbEnvironment):
 
     @pytest.fixture
     def service1_data(self):
-        return {'name': 'nginx', 'detail': 'nginx service', 'port': 80}
+        return {'id': 'fake_id1', 'name': 'nginx', 'detail': 'nginx service',
+                'port': 80}
 
     @pytest.fixture
     def service2_data(self):
-        return {'name': 'postgres', 'detail': 'postgres database', 'port': 5432}
+        return {'id': 'fake_id2', 'name': 'postgres',
+                'detail': 'postgres database', 'port': 5432}
+
+    def test_next_identity(self, service_repo):
+        new_id = service_repo.next_identity()
+        assert type(new_id) is str
+
+        next_new_id = service_repo.next_identity()
+        assert new_id != next_new_id
 
     def test_service_persistence(self, table, host_repo, service_repo,
                                  host_data, service1_data, service2_data):
@@ -157,8 +166,8 @@ class TestServiceRepoImpl(DbEnvironment):
         host_from_persistence = host_repo.all()[0]
         service1 = Service(**service1_data)
         service2 = Service(**service2_data)
-        service_repo.add(host_from_persistence.id, service1)
-        service_repo.add(host_from_persistence.id, service2)
+        service_repo.save(host_from_persistence.id, service1)
+        service_repo.save(host_from_persistence.id, service2)
 
         host_from_persistence = host_repo.all()[0]
         services_from_persistence = host_from_persistence.services
@@ -179,25 +188,29 @@ class TestServiceRepoImpl(DbEnvironment):
         host_repo.save(Host(**host_data))
         host_from_persistence = host_repo.all()[0]
         service = Service(**service1_data)
-        service_repo.add(host_from_persistence.id, service)
-        service_from_persistence = host_repo.all()[0].services[0]
+        service_repo.save(host_from_persistence.id, service)
+        assert len(host_repo.all()[0].services) == 1
 
-        modified_service = Service(**service2_data)
-        modified_service.id = service_from_persistence.id
-        service_repo.modify(host_from_persistence.id, modified_service)
-
+        service.name, service.detail, service.port = service2_data['name'], \
+                                                     service2_data['detail'], \
+                                                     service2_data['port']
+        service_repo.save(host_from_persistence.id, service)
         services_from_persistence = host_repo.all()[0].services
         assert len(services_from_persistence) == 1
-        modified_service_from_persistence = services_from_persistence[0]
-        for key in (list(service2_data.keys()) + ['id']):
-            assert getattr(modified_service, key) == getattr(
-                modified_service_from_persistence, key)
+
+        service_from_persistence = services_from_persistence[0]
+        for key in service2_data.keys():
+            if key == 'id':
+                assert service1_data['id'] == service_from_persistence.id
+            else:
+                assert service2_data[key] == getattr(service_from_persistence,
+                                                     key)
 
     def test_delete(self, table, host_repo, service_repo,
                     host_data, service1_data, service2_data):
         host_repo.save(Host(**host_data))
         service = Service(**service1_data)
-        service_repo.add(host_repo.all()[0].id, service)
+        service_repo.save(host_repo.all()[0].id, service)
         service_id = host_repo.all()[0].services[0].id
         service_repo.delete(service_id)
         assert len(host_repo.all()[0].services) == 0

@@ -18,7 +18,7 @@ hosts = Table('hosts', _metadata,
               Column('address', Text, nullable=False))
 
 services = Table('services', _metadata,
-                 Column('id', Integer, primary_key=True),
+                 Column('id', String(50), primary_key=True),
                  Column('name', String(50), nullable=False),
                  Column('detail', Text),
                  Column('port', Integer, nullable=False),

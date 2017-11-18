@@ -241,9 +241,9 @@ class TestModifyHost(object):
 
 
 class TestAddService(object):
-    def test_success_add(self, service_repo):
+    def test_success_save(self, service_repo):
         add_service(1, 'nginx', 'nginx for website', 80)
-        service_repo.add.assert_called_once()
+        service_repo.save.assert_called_once()
 
     @pytest.mark.parametrize(
         'service_data, expected',
@@ -272,7 +272,7 @@ class TestDeleteService(object):
 class TestModifyService(object):
     def test_success_modify(self, service_repo):
         modify_service(1, 'nginx', '', 80, 2)
-        service_repo.modify.assert_called_once()
+        service_repo.save.assert_called_once()
 
     @pytest.mark.parametrize(
         'service_data, expected',
