@@ -4,7 +4,7 @@ from .utils import decrypt_with_jwt, now, datetime_from_str
 from .entities import Anonymous, Admin, Host, Service
 from .errors import IncorrectSign, IncorrectUsername, IncorrectPassword, \
     EmptyField
-from .repos import repos
+from .registry import repos
 
 
 def _fields_required(fields, *keys):
@@ -92,6 +92,7 @@ def modify_host(id, name, detail, address):
 
 
 def add_service(host_id, name, detail, port):
+    # repos.host.
     _fields_required(locals(), 'host_id')
     id = repos.service.next_identity()
     service = Service(id, name, detail, port)

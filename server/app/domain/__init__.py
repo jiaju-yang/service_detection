@@ -1,4 +1,5 @@
-from .repos import AdminRepo, ServiceRepo, HostRepo, repos
+from .repos import AdminRepo, ServiceRepo, HostRepo
+from .registry import repos
 
 
 def inject_repos(*, admin: AdminRepo = None, host: HostRepo = None,

@@ -40,6 +40,10 @@ class HostRepo(metaclass=ABCMeta):
         """
         pass
 
+    @abstractmethod
+    def host_of_id(self, host_id):
+        pass
+
 
 class ServiceRepo(metaclass=ABCMeta):
     @abstractmethod
@@ -53,15 +57,3 @@ class ServiceRepo(metaclass=ABCMeta):
     @abstractmethod
     def delete(self, id):
         pass
-
-
-class RepoFactory(object):
-    def __init__(self):
-        pass
-
-    def build(self, **kwargs):
-        for key, value in kwargs.items():
-            setattr(self, key, value)
-
-
-repos = RepoFactory()

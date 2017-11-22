@@ -26,7 +26,8 @@ def set_admin(username, password, sign, tip):
     try:
         set_admin(username, password, sign, tip)
     except EmptyField as e:
-        click.echo('!!!U should set {missed_field} for admin!'.format(missed_field=e.field))
+        click.echo('!!!U should set {missed_field} for admin!'.format(
+            missed_field=e.field))
     else:
         click.echo('Initialized db data.')
 

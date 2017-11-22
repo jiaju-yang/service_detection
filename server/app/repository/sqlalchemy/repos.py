@@ -1,48 +1,30 @@
-from itertools import groupby
-from sqlalchemy import join
-from sqlalchemy.sql import select, update, insert, delete
-from flask_sqlalchemy import SQLAlchemy
 from uuid import uuid4
 
 from app.domain.entities import Admin, Host, Service
 from app.domain.errors import NoAdministratorFound
 from app.domain.repos import AdminRepo, HostRepo, ServiceRepo
-
-from .sqlalchemy_helper import choose_columns
-from .tables import admins, hosts, services
-
-sqlalchemy = SQLAlchemy()
+from .mappers import (admin_2_admin_model, admin_model_2_admin,
+                      host_model_2_host, host_2_host_model,
+                      service_2_service_model)
+from .models import db, AdminModel, HostModel, ServiceModel
 
 
 class SqlalchemyAdminRepo(AdminRepo):
     def get(self):
-        with sqlalchemy.engine.connect() as conn:
-            admin_data = conn.execute(
-                select(choose_columns(admins, 'username',
-                                      ('password', 'encrypted_password'),
-                                      'sign', 'tip', 'updated_at'))).first()
-            if not admin_data:
-                raise NoAdministratorFound()
-            return Admin(**admin_data)
+        admin = AdminModel.query.get(1)
+        if not admin:
+            raise NoAdministratorFound()
+        return admin_model_2_admin(admin)
 
     def set(self, admin: Admin):
-        with sqlalchemy.engine.connect() as conn:
-            exist_admin = conn.execute(select([admins.c.id])).first()
-            if exist_admin:
-                conn.execute(
-                    update(admins).where(
-                        admins.c.id == exist_admin['id']).values(
-                        username=admin.username,
-                        updated_at=admin.updated_at,
-                        password=admin.password,
-                        sign=admin.sign,
-                        tip=admin.tip))
-            else:
-                conn.execute(insert(admins).values(username=admin.username,
-                                                   updated_at=admin.updated_at,
-                                                   password=admin.password,
-                                                   sign=admin.sign,
-                                                   tip=admin.tip))
+        admin_model = admin_2_admin_model(admin)
+        exist_admin_model = AdminModel.query.get(1)
+        if exist_admin_model:
+            admin_model.id = exist_admin_model.id
+            db.session.merge(admin_model)
+        else:
+            db.session.add(admin_model)
+        db.session.commit()
 
 
 class SqlalchemyHostRepo(HostRepo):
@@ -50,50 +32,22 @@ class SqlalchemyHostRepo(HostRepo):
         return 'HOST_' + str(uuid4())
 
     def save(self, host: Host):
-        with sqlalchemy.engine.connect() as conn:
-            exist_host = conn.execute(
-                select([hosts.c.id]).where(hosts.c.id == host.id)).first()
-            if exist_host:
-                conn.execute(
-                    update(hosts).where(
-                        hosts.c.id == host.id).values(id=host.id,
-                                                      name=host.name,
-                                                      detail=host.detail,
-                                                      address=host.address))
-            else:
-                conn.execute(
-                    insert(hosts).values(id=host.id, name=host.name,
-                                         detail=host.detail,
-                                         address=host.address))
+        host_model = host_2_host_model(host)
+        db.session.merge(host_model)
+        db.session.commit()
 
     def delete(self, id):
-        with sqlalchemy.engine.connect() as conn:
-            conn.execute(delete(hosts).where(hosts.c.id == id))
+        HostModel.query.filter_by(id=id).delete()
+        ServiceModel.query.filter_by(host_id=id).delete()
+        db.session.commit()
 
     def all(self):
-        with sqlalchemy.engine.connect() as conn:
-            result = conn.execute(select(choose_columns(hosts, ('id', 'id'),
-                                                        ('name', 'name'),
-                                                        ('address', 'address'),
-                                                        ('detail',
-                                                         'detail')) + choose_columns(
-                services, ('id', 'service.id'), ('name', 'service.name'),
-                ('detail', 'service.detail'), ('port', 'service.port'),
-                ('host_id', 'host_id'))).select_from(
-                join(hosts, services, hosts.c.id == services.c.host_id,
-                     isouter=True)))
-            host_models = []
-            for host_data, services_data in groupby(
-                    result, key=lambda row: {key: row[key] for key in (
-                            'id', 'name', 'address', 'detail')}):
-                service_models = [Service(service_data['service.id'],
-                                          service_data['service.name'],
-                                          service_data['service.detail'],
-                                          service_data['service.port']) for
-                                  service_data in
-                                  services_data if service_data['service.id']]
-                host_models.append(Host(**host_data, services=service_models))
-            return host_models
+        host_models = HostModel.query.all()
+        return [host_model_2_host(host_model) for host_model in host_models]
+
+    def host_of_id(self, host_id):
+        host_model = HostModel.query.filter_by(id=host_id).first()
+        return host_model_2_host(host_model)
 
 
 class SqlalchemyServiceRepo(ServiceRepo):
@@ -101,22 +55,10 @@ class SqlalchemyServiceRepo(ServiceRepo):
         return 'SERVICE_' + str(uuid4())
 
     def save(self, host_id, service: Service):
-        with sqlalchemy.engine.connect() as conn:
-            exist_service = conn.execute(
-                select([services.c.id]).where(
-                    services.c.id == service.id)).first()
-            if exist_service:
-                conn.execute(
-                    update(services).where(
-                        services.c.id == service.id).values(
-                        id=service.id, name=service.name, detail=service.detail,
-                        port=service.port, host_id=host_id))
-            else:
-                conn.execute(
-                    insert(services).values(
-                        id=service.id, name=service.name, detail=service.detail,
-                        port=service.port, host_id=host_id))
+        service_model = service_2_service_model(service, host_id)
+        db.session.merge(service_model)
+        db.session.commit()
 
     def delete(self, id):
-        with sqlalchemy.engine.connect() as conn:
-            conn.execute(delete(services).where(services.c.id == id))
+        ServiceModel.query.filter_by(id=id).delete()
+        db.session.commit()

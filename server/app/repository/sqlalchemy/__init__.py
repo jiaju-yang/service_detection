@@ -1,17 +1,16 @@
-from .repos import sqlalchemy, SqlalchemyAdminRepo, SqlalchemyHostRepo, SqlalchemyServiceRepo
-from . import tables
+from flask_migrate import Migrate
+
+from .models import db
+from .repos import (SqlalchemyAdminRepo, SqlalchemyHostRepo,
+                    SqlalchemyServiceRepo)
 
 
 def get_repos(app):
-    sqlalchemy.init_app(app)
+    db.init_app(app)
+    Migrate(app, db)
 
     return {
         'admin': SqlalchemyAdminRepo(),
         'host': SqlalchemyHostRepo(),
         'service': SqlalchemyServiceRepo(),
     }
-
-
-def init(app):
-    with app.app_context():
-        tables.create_all(sqlalchemy.engine)

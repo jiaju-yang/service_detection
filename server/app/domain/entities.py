@@ -3,6 +3,7 @@ from typing import NamedTuple
 from .utils import encrypt_irreversibly, encrypt_with_jwt, datetime_from_str, \
     datetime_to_str, is_auth_time_valid
 from .errors import EmptyField
+from .registry import repos
 
 
 class Entity(object):
@@ -128,6 +129,12 @@ class Host(Entity, ToDictMixin):
         self.services = []
         if services:
             self.services.extend(services)
+
+    def add_new_service(self, name, detail, port):
+        service_id = repos.service.next_identity()
+        new_service = Service(service_id, name, detail, port)
+        repos.service.save(self.id, new_service)
+
 
     @property
     def id(self):

@@ -1,21 +1,23 @@
 from datetime import datetime
+
 import pytest
 
-from app.repository.sqlalchemy.repos import sqlalchemy
 from app.domain.entities import Admin, Host, Service
 from app.domain.errors import NoAdministratorFound
 from app.repository.sqlalchemy import (SqlalchemyAdminRepo, SqlalchemyHostRepo,
                                        SqlalchemyServiceRepo)
-from app.repository.sqlalchemy import tables
+from app.repository.sqlalchemy.models import db
 from tests.unit.utils import FlaskAppContextEnvironment
 
 
 class DbEnvironment(FlaskAppContextEnvironment):
     @pytest.fixture
     def table(self, app_context):
-        tables.drop_all(sqlalchemy.engine)
-        yield tables.create_all(sqlalchemy.engine)
-        tables.drop_all(sqlalchemy.engine)
+        db.drop_all()
+        db.create_all()
+        yield
+        db.session.remove()
+        db.drop_all()
 
 
 class TestAdminRepoImpl(DbEnvironment):
@@ -81,7 +83,7 @@ class TestHostRepoImpl(DbEnvironment):
         next_new_id = repo.next_identity()
         assert new_id != next_new_id
 
-    def test_one_host_persistence(self, table, repo, host1_data, host2_data):
+    def test_save_one_host(self, table, repo, host1_data, host2_data):
         host = Host(**host1_data)
         repo.save(host)
         hosts_from_persistence = repo.all()
@@ -91,8 +93,8 @@ class TestHostRepoImpl(DbEnvironment):
         for key in host1_data.keys():
             assert getattr(host, key) == getattr(host_from_persistence, key)
 
-    def test_multiple_host_persistence(self, table, repo, host1_data,
-                                       host2_data):
+    def test_save_multiple_host(self, table, repo, host1_data,
+                                host2_data):
         hosts = [Host(**host1_data), Host(**host2_data)]
         for host in hosts:
             repo.save(host)
@@ -103,7 +105,7 @@ class TestHostRepoImpl(DbEnvironment):
             for key in host1_data.keys():
                 assert getattr(host, key) == getattr(host_from_persistence, key)
 
-    def test_modify(self, table, repo, host1_data, host2_data):
+    def test_save_modified_host(self, table, repo, host1_data, host2_data):
         host = Host(**host1_data)
         repo.save(host)
         hosts_from_persistence = repo.all()
@@ -127,6 +129,13 @@ class TestHostRepoImpl(DbEnvironment):
         repo.save(host)
         repo.delete(repo.all()[0].id)
         assert len(repo.all()) == 0
+
+    def test_query_by_id(self, table, repo, host1_data):
+        host = Host(**host1_data)
+        repo.save(host)
+        saved_host = repo.host_of_id(host.id)
+        for key in host1_data.keys():
+            assert getattr(host, key) == getattr(saved_host, key)
 
 
 class TestServiceRepoImpl(DbEnvironment):
@@ -160,8 +169,8 @@ class TestServiceRepoImpl(DbEnvironment):
         next_new_id = service_repo.next_identity()
         assert new_id != next_new_id
 
-    def test_service_persistence(self, table, host_repo, service_repo,
-                                 host_data, service1_data, service2_data):
+    def test_save_service(self, table, host_repo, service_repo,
+                          host_data, service1_data, service2_data):
         host_repo.save(Host(**host_data))
         host_from_persistence = host_repo.all()[0]
         service1 = Service(**service1_data)
@@ -183,8 +192,8 @@ class TestServiceRepoImpl(DbEnvironment):
             assert getattr(service2, key) == getattr(service2_from_persistence,
                                                      key)
 
-    def test_modify(self, table, host_repo, service_repo,
-                    host_data, service1_data, service2_data):
+    def test_save_modified_service(self, table, host_repo, service_repo,
+                                   host_data, service1_data, service2_data):
         host_repo.save(Host(**host_data))
         host_from_persistence = host_repo.all()[0]
         service = Service(**service1_data)
