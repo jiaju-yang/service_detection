@@ -24,7 +24,7 @@ class HostModel(db.Model):
     name = db.Column(db.String(50), nullable=False)
     detail = db.Column(db.Text)
     address = db.Column(db.Text, nullable=False)
-    services = db.relationship('ServiceModel', backref='host')
+    services = db.relationship('ServiceModel', lazy='joined', backref='host')
 
     def __repr__(self):
         return '<Host {name}, {address}>'.format(name=self.name,
