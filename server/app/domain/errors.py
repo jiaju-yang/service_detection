@@ -21,3 +21,7 @@ class EmptyField(SDException):
 
 class NoAdministratorFound(SDException):
     pass
+
+
+class RequiredPropertyNotProvided(SDException):
+    pass

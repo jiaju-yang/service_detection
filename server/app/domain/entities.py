@@ -133,8 +133,8 @@ class Host(Entity, ToDictMixin):
     def add_new_service(self, name, detail, port):
         service_id = repos.service.next_identity()
         new_service = Service(service_id, name, detail, port)
-        repos.service.save(self.id, new_service)
-
+        self.services.append(new_service)
+        return new_service
 
     @property
     def id(self):

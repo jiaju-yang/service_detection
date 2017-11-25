@@ -44,6 +44,10 @@ class HostRepo(metaclass=ABCMeta):
     def host_of_id(self, host_id):
         pass
 
+    @abstractmethod
+    def host_of_id(self, host_id):
+        pass
+
 
 class ServiceRepo(metaclass=ABCMeta):
     @abstractmethod

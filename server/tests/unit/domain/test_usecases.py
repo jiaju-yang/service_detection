@@ -5,7 +5,7 @@ import pytest
 from flask import current_app
 
 from app import domain
-from app.domain.entities import Admin, Anonymous
+from app.domain.entities import Admin, Anonymous, Host
 from app.domain.errors import (IncorrectSign, IncorrectUsername,
                                IncorrectPassword, EmptyField)
 from app.domain.usecases import (
@@ -47,6 +47,7 @@ def host_repo():
     repo.save = Mock()
     repo.delete = Mock()
     repo.all = Mock()
+    repo.host_of_id = Mock()
     domain.inject_repos(host=repo)
     return repo
 
@@ -241,7 +242,7 @@ class TestModifyHost(object):
 
 
 class TestAddService(object):
-    def test_success_save(self, service_repo):
+    def test_success_save(self, service_repo, host_repo):
         add_service(1, 'nginx', 'nginx for website', 80)
         service_repo.save.assert_called_once()
 
@@ -250,7 +251,8 @@ class TestAddService(object):
         [[[None, 'nginx', 'nginx for website', 80], 'host_id'],
          [[1, '', 'nginx for website', 80], 'name'],
          [[1, 'nginx', 'nginx for website', None], 'port']])
-    def test_fail_add(self, service_repo, service_data, expected):
+    def test_fail_add(self, host_repo, service_repo, service_data, expected):
+        host_repo.host_of_id.return_value = Host('fake_1', 'xxx', 'yyy', 'zzz')
         with pytest.raises(EmptyField) as exc_info:
             add_service(*service_data)
         assert exc_info.type is EmptyField

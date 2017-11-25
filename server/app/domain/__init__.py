@@ -4,4 +4,6 @@ from .registry import repos
 
 def inject_repos(*, admin: AdminRepo = None, host: HostRepo = None,
                  service: ServiceRepo = None):
-    repos.build(**locals())
+    for key, value in locals().items():
+        if value:
+            repos.build(**{key: value})

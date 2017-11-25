@@ -1,16 +1,11 @@
 from jwt import DecodeError
 
+from .assertions import assert_not_none
 from .utils import decrypt_with_jwt, now, datetime_from_str
 from .entities import Anonymous, Admin, Host, Service
 from .errors import IncorrectSign, IncorrectUsername, IncorrectPassword, \
     EmptyField
 from .registry import repos
-
-
-def _fields_required(fields, *keys):
-    for key in keys:
-        if not fields[key]:
-            raise EmptyField(key)
 
 
 def set_admin(username, original_password, sign=None,
@@ -92,20 +87,18 @@ def modify_host(id, name, detail, address):
 
 
 def add_service(host_id, name, detail, port):
-    # repos.host.
-    _fields_required(locals(), 'host_id')
-    id = repos.service.next_identity()
-    service = Service(id, name, detail, port)
-    repos.service.save(host_id, service)
+    assert_not_none(host_id, field='host_id')
+    host = repos.host.host_of_id(host_id)
+    new_service = host.add_new_service(name, detail, port)
+    repos.service.save(host_id, new_service)
 
 
 def delete_service(id):
-    if not id:
-        raise EmptyField('id')
+    assert_not_none(id, field='id')
     repos.service.delete(id)
 
 
 def modify_service(id, name, detail, port, host_id):
-    _fields_required(locals(), 'host_id')
+    assert_not_none(host_id, field='host_id')
     service = Service(id, name, detail, port)
     repos.service.save(host_id, service)
