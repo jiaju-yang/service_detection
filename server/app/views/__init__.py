@@ -3,21 +3,23 @@ from flask_restplus import Api
 
 from app.domain.errors import NoAdministratorFound, SDException
 from app.domain.usecases import get_user_by_token
-
-from . import status, restful_helper, host, auth, service
+from . import restful_helper, host, auth, service
+from .response_helper import Status, respond
 
 
 def register(app):
     @app.errorhandler(404)
     def not_found(error):
-        return status.respond({'msg': 'Url not found.'}, status.NOT_FOUND)
+        return respond({'msg': 'Url not found.'}, Status.NOT_FOUND)
 
     @app.errorhandler(SDException)
     def handle_error(e):
         if isinstance(e, NoAdministratorFound):
-            return status.respond({'msg': 'Please create an administrator first.'}, status.INTERNAL_SERVER_ERROR)
+            return respond({'msg': 'Please create an administrator first.'},
+                           Status.INTERNAL_SERVER_ERROR)
         else:
-            return status.respond({'msg': 'Unknown error just happened.'}, status.INTERNAL_SERVER_ERROR)
+            return respond({'msg': 'Unknown error just happened.'},
+                           Status.INTERNAL_SERVER_ERROR)
 
     @app.before_request
     def parse_token():

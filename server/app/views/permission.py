@@ -3,8 +3,7 @@ from functools import wraps
 from flask import request
 
 from app.domain.usecases import is_valid_admin, is_valid_anonymous
-
-from . import status
+from .response_helper import Status, respond
 
 
 def anonymous_required(func):
@@ -13,7 +12,7 @@ def anonymous_required(func):
         if is_valid_admin(request.user) or is_valid_anonymous(request.user):
             return func(*args, **kwargs)
         else:
-            return status.respond({'msg': 'Invalid user!'}, status.UNAUTHORIZED)
+            return respond({'msg': 'Invalid user!'}, Status.UNAUTHORIZED)
 
     return wrap
 
@@ -24,7 +23,7 @@ def admin_required(func):
         if is_valid_admin(request.user):
             return func(*args, **kwargs)
         else:
-            return status.respond({'msg': 'Invalid administrator!'},
-                                  status.UNAUTHORIZED)
+            return respond({'msg': 'Invalid administrator!'},
+                           Status.UNAUTHORIZED)
 
     return wrap
