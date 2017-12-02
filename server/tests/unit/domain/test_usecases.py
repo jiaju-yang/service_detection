@@ -1,5 +1,5 @@
-from unittest.mock import Mock
 from datetime import datetime, timedelta
+from unittest.mock import Mock
 
 import pytest
 from flask import current_app
@@ -63,11 +63,14 @@ def service_repo():
 
 
 class TestSetAdmin(object):
-    def test_success_set(self, admin_repo):
-        admin_data = {'username': 'test',
-                      'sign': 'bullshit',
-                      'tip': 'How\'s the code?',
-                      'original_password': '123456'}
+    @pytest.fixture
+    def admin_data(self):
+        return {'username': 'test',
+                'sign': 'bullshit',
+                'tip': 'How\'s the code?',
+                'original_password': '123456'}
+
+    def test_success_set(self, admin_repo, admin_data):
         set_admin(**admin_data)
         admin_repo.set.assert_called_once()
 

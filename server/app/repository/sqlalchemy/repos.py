@@ -18,12 +18,8 @@ class SqlalchemyAdminRepo(AdminRepo):
 
     def set(self, admin: Admin):
         admin_model = admin_2_admin_model(admin)
-        exist_admin_model = AdminModel.query.get(1)
-        if exist_admin_model:
-            admin_model.id = exist_admin_model.id
-            db.session.merge(admin_model)
-        else:
-            db.session.add(admin_model)
+        admin_model.id = 1
+        db.session.merge(admin_model)
         db.session.commit()
 
 
